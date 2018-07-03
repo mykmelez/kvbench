@@ -1,0 +1,10 @@
+[package]
+name = "kv-test"
+version = "0.1.0"
+authors = ["Myk Melez <myk@mykzilla.org>"]
+
+[dependencies]
+leveldb="0"
+lmdb="0"
+tempdir="0"
+tempfile="3"
