@@ -5,24 +5,15 @@ extern crate rand;
 extern crate tempdir;
 extern crate test;
 
-use tempdir::TempDir;
-use lmdb::{
-    Environment,
-    Error,
-    Transaction,
-    WriteFlags,
-};
-
-
 fn main() {
 }
 
 #[cfg(test)]
 mod tests {
-    use ::{
+    use tempdir::TempDir;
+    use lmdb::{
         Environment,
         Error,
-        TempDir,
         Transaction,
         WriteFlags,
     };
