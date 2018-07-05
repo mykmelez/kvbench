@@ -13,6 +13,8 @@ use leveldb::options::{
 use tempdir::TempDir;
 
 fn main() {
+    // Based on the example in the README for https://github.com/skade/leveldb.
+
     let tempdir = TempDir::new("demo").unwrap();
     let path = tempdir.path();
 

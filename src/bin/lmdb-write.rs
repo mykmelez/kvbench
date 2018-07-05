@@ -12,6 +12,8 @@ use lmdb::{
 use tempdir::TempDir;
 
 fn main() {
+    // Based on test_put_get_del() in https://github.com/danburkert/lmdb-rs.
+
     let dir = TempDir::new("test").unwrap();
     let env = Environment::new().open(dir.path()).unwrap();
     let db = env.open_db(None).unwrap();
