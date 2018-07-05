@@ -75,6 +75,14 @@ mod tests {
     }
 
     #[bench]
+    fn bench_setup_bench_db(b: &mut Bencher) {
+        let n = 100u32;
+        b.iter(|| {
+            let (_dir, _env) = setup_bench_db(n);
+        });
+    }
+
+    #[bench]
     fn bench_get_rand(b: &mut Bencher) {
         let n = 100u32;
         let (_dir, env) = setup_bench_db(n);
