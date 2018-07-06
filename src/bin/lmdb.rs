@@ -57,7 +57,7 @@ mod tests {
         format!("data{}", n)
     }
 
-    fn setup_bench_db<'a>(num_pairs: u32) -> (TempDir, Environment) {
+    fn setup_bench_db(num_pairs: u32) -> (TempDir, Environment) {
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
 

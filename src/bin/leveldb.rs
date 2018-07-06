@@ -73,31 +73,7 @@ mod tests {
         format!("data{}", n).into_bytes()
     }
 
-    pub fn setup_bench_db<'a>(num_pairs: u32) -> TempDir {
-        let tempdir = TempDir::new("demo").unwrap();
-        let path_buf = tempdir.path().to_path_buf();
-        let path = path_buf.as_path();
-
-        let mut options = Options::new();
-        options.create_if_missing = true;
-        let database = match Database::open(path, options) {
-            Ok(db) => { db },
-            Err(e) => { panic!("failed to open database: {:?}", e) }
-        };
-
-        let write_opts = WriteOptions::new();
-
-        for i in 0..num_pairs {
-            match database.put(write_opts, i as i32, &get_value(i)) {
-                Ok(_) => { () },
-                Err(e) => { panic!("failed to write to database: {:?}", e) }
-            };
-        }
-
-        tempdir
-    }
-
-    pub fn setup_bench_db_batch<'a>(num_pairs: u32) -> TempDir {
+    pub fn setup_bench_db(num_pairs: u32) -> TempDir {
         let tempdir = TempDir::new("demo").unwrap();
         let path_buf = tempdir.path().to_path_buf();
         let path = path_buf.as_path();
@@ -120,22 +96,6 @@ mod tests {
         };
 
         tempdir
-    }
-
-    #[bench]
-    fn bench_setup_bench_db(b: &mut Bencher) {
-        let n = 100u32;
-        b.iter(|| {
-            let _dir = setup_bench_db(n);
-        });
-    }
-
-    #[bench]
-    fn bench_setup_bench_db_batch(b: &mut Bencher) {
-        let n = 100u32;
-        b.iter(|| {
-            let _dir = setup_bench_db_batch(n);
-        });
     }
 
     #[bench]
