@@ -69,8 +69,16 @@ mod tests {
     };
     use tempdir::TempDir;
 
+    pub fn get_key(n: u32) -> i32 {
+        n as i32
+    }
+
     pub fn get_value(n: u32) -> Vec<u8> {
         format!("data{}", n).into_bytes()
+    }
+
+    pub fn get_pair(n: u32) -> (i32, Vec<u8>) {
+        (get_key(n), get_value(n))
     }
 
     pub fn setup_bench_db(num_pairs: u32) -> TempDir {
@@ -126,7 +134,7 @@ mod tests {
         options.create_if_missing = true;
         let db: Database<i32> = Database::open(path, options).unwrap();
 
-        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| (n as i32, get_value(n))).collect();
+        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
 
         b.iter(|| {
             let batch = &mut Writebatch::new();
@@ -148,7 +156,7 @@ mod tests {
         options.create_if_missing = true;
         let db: Database<i32> = Database::open(path, options).unwrap();
 
-        let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| (n as i32, get_value(n))).collect();
+        let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
         thread_rng().shuffle(&mut pairs[..]);
 
         b.iter(|| {
