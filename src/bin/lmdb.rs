@@ -49,12 +49,16 @@ mod tests {
     use self::rand::{Rng, thread_rng};
     use self::test::{Bencher, black_box};
 
-    fn get_key(n: u32) -> String {
-        format!("key{}", n)
+    fn get_key(n: u32) -> [u8; 4] {
+        n.to_bytes()
     }
 
-    fn get_value(n: u32) -> String {
-        format!("data{}", n)
+    fn get_value(n: u32) -> Vec<u8> {
+        format!("data{}", n).into_bytes()
+    }
+
+    fn get_pair(n: u32) -> ([u8; 4], Vec<u8>) {
+        (get_key(n), get_value(n))
     }
 
     fn setup_bench_db(num_pairs: u32) -> (TempDir, Environment) {
@@ -97,7 +101,7 @@ mod tests {
         let env = Environment::new().open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
 
-        let pairs: Vec<(String, String)> = (0..num_pairs).map(|n| (get_key(n), get_value(n))).collect();
+        let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
 
         b.iter(|| {
             let mut txn = env.begin_rw_txn().unwrap();
@@ -115,7 +119,7 @@ mod tests {
         let env = Environment::new().open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
 
-        let mut pairs: Vec<(String, String)> = (0..num_pairs).map(|n| (get_key(n), get_value(n))).collect();
+        let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
         thread_rng().shuffle(&mut pairs[..]);
 
         b.iter(|| {
@@ -134,7 +138,7 @@ mod tests {
         let db = env.open_db(None).unwrap();
         let txn = env.begin_ro_txn().unwrap();
 
-        let mut keys: Vec<String> = (0..n).map(|n| get_key(n)).collect();
+        let mut keys: Vec<[u8; 4]> = (0..n).map(|n| get_key(n)).collect();
         thread_rng().shuffle(&mut keys[..]);
 
         b.iter(|| {
