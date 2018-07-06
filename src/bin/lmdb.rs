@@ -57,14 +57,14 @@ mod tests {
         format!("data{}", n)
     }
 
-    fn setup_bench_db<'a>(num_rows: u32) -> (TempDir, Environment) {
+    fn setup_bench_db<'a>(num_pairs: u32) -> (TempDir, Environment) {
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
 
         {
             let db = env.open_db(None).unwrap();
             let mut txn = env.begin_rw_txn().unwrap();
-            for i in 0..num_rows {
+            for i in 0..num_pairs {
                 txn.put(db, &get_key(i), &get_value(i), WriteFlags::empty()).unwrap();
             }
             txn.commit().unwrap();
@@ -92,16 +92,16 @@ mod tests {
 
     #[bench]
     fn bench_put_seq(b: &mut Bencher) {
-        let n = 100u32;
+        let num_pairs = 100u32;
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
 
-        let keys: Vec<(String, String)> = (0..n).map(|n| (get_key(n), get_value(n))).collect();
+        let pairs: Vec<(String, String)> = (0..num_pairs).map(|n| (get_key(n), get_value(n))).collect();
 
         b.iter(|| {
             let mut txn = env.begin_rw_txn().unwrap();
-            for (key, value) in &keys {
+            for (key, value) in &pairs {
                 txn.put(db, key, value, WriteFlags::empty()).unwrap();
             }
             txn.commit().unwrap();
@@ -110,17 +110,17 @@ mod tests {
 
     #[bench]
     fn bench_put_rand(b: &mut Bencher) {
-        let n = 100u32;
+        let num_pairs = 100u32;
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
 
-        let mut keys: Vec<(String, String)> = (0..n).map(|n| (get_key(n), get_value(n))).collect();
-        thread_rng().shuffle(&mut keys[..]);
+        let mut pairs: Vec<(String, String)> = (0..num_pairs).map(|n| (get_key(n), get_value(n))).collect();
+        thread_rng().shuffle(&mut pairs[..]);
 
         b.iter(|| {
             let mut txn = env.begin_rw_txn().unwrap();
-            for (key, value) in &keys {
+            for (key, value) in &pairs {
                 txn.put(db, key, value, WriteFlags::empty()).unwrap();
             }
             txn.commit().unwrap();

@@ -69,11 +69,11 @@ mod tests {
     };
     use tempdir::TempDir;
 
-    pub fn get_value(n: u32) -> String {
-        format!("data{}", n)
+    pub fn get_value(n: u32) -> Vec<u8> {
+        format!("data{}", n).into_bytes()
     }
 
-    pub fn setup_bench_db<'a>(num_rows: u32) -> TempDir {
+    pub fn setup_bench_db<'a>(num_pairs: u32) -> TempDir {
         let tempdir = TempDir::new("demo").unwrap();
         let path_buf = tempdir.path().to_path_buf();
         let path = path_buf.as_path();
@@ -87,8 +87,8 @@ mod tests {
 
         let write_opts = WriteOptions::new();
 
-        for i in 0..num_rows {
-            match database.put(write_opts, i as i32, get_value(i).as_str().as_bytes()) {
+        for i in 0..num_pairs {
+            match database.put(write_opts, i as i32, &get_value(i)) {
                 Ok(_) => { () },
                 Err(e) => { panic!("failed to write to database: {:?}", e) }
             };
@@ -97,7 +97,7 @@ mod tests {
         tempdir
     }
 
-    pub fn setup_bench_db_batch<'a>(num_rows: u32) -> TempDir {
+    pub fn setup_bench_db_batch<'a>(num_pairs: u32) -> TempDir {
         let tempdir = TempDir::new("demo").unwrap();
         let path_buf = tempdir.path().to_path_buf();
         let path = path_buf.as_path();
@@ -110,8 +110,8 @@ mod tests {
         };
 
         let batch = &mut Writebatch::new();
-        for i in 0..num_rows {
-            batch.put(i as i32, get_value(i).as_str().as_bytes());
+        for i in 0..num_pairs {
+            batch.put(i as i32, &get_value(i));
         }
         let write_opts = WriteOptions::new();
         match database.write(write_opts, batch) {
@@ -153,6 +153,51 @@ mod tests {
 
         b.iter(|| {
             let _db: Database<i32> = Database::open(path, Options::new()).unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_seq(b: &mut Bencher) {
+        let dir = TempDir::new("bench_put_seq").unwrap();
+        let path = dir.path();
+        let num_pairs = 100u32;
+
+        let mut options = Options::new();
+        options.create_if_missing = true;
+        let db: Database<i32> = Database::open(path, options).unwrap();
+
+        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| (n as i32, get_value(n))).collect();
+
+        b.iter(|| {
+            let batch = &mut Writebatch::new();
+            for (key, value) in &pairs {
+                batch.put(*key, value);
+            }
+            let write_opts = WriteOptions::new();
+            db.write(write_opts, batch).unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_rand(b: &mut Bencher) {
+        let dir = TempDir::new("bench_put_rand").unwrap();
+        let path = dir.path();
+        let num_pairs = 100u32;
+
+        let mut options = Options::new();
+        options.create_if_missing = true;
+        let db: Database<i32> = Database::open(path, options).unwrap();
+
+        let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| (n as i32, get_value(n))).collect();
+        thread_rng().shuffle(&mut pairs[..]);
+
+        b.iter(|| {
+            let batch = &mut Writebatch::new();
+            for (key, value) in &pairs {
+                batch.put(*key, value);
+            }
+            let write_opts = WriteOptions::new();
+            db.write(write_opts, batch).unwrap();
         });
     }
 
