@@ -139,6 +139,24 @@ mod tests {
     }
 
     #[bench]
+    fn bench_open_db(b: &mut Bencher) {
+        let dir = TempDir::new("bench_open_db").unwrap();
+        let path = dir.path();
+
+        // Create the database first so we only measure the time to open
+        // an existing database.
+        {
+            let mut options = Options::new();
+            options.create_if_missing = true;
+            let _db: Database<i32> = Database::open(path, options).unwrap();
+        }
+
+        b.iter(|| {
+            let _db: Database<i32> = Database::open(path, Options::new()).unwrap();
+        });
+    }
+
+    #[bench]
     fn bench_get_rand(b: &mut Bencher) {
         let n = 100u32;
         let tempdir = setup_bench_db(n);

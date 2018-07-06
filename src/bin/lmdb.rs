@@ -74,10 +74,18 @@ mod tests {
 
     #[bench]
     fn bench_open_db(b: &mut Bencher) {
-        let dir = TempDir::new("test").unwrap();
+        let dir = TempDir::new("bench_open_db").unwrap();
+        let path = dir.path();
+
+        // Create the database first so we only measure the time to open
+        // an existing database.
+        {
+            let env = Environment::new().open(path).unwrap();
+            let _db = env.open_db(None).unwrap();
+        }
 
         b.iter(|| {
-            let env = Environment::new().open(dir.path()).unwrap();
+            let env = Environment::new().open(path).unwrap();
             let _db = env.open_db(None).unwrap();
         });
     }
