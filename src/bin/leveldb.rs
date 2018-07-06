@@ -128,7 +128,7 @@ mod tests {
     fn bench_put_seq(b: &mut Bencher) {
         let dir = TempDir::new("bench_put_seq").unwrap();
         let path = dir.path();
-        let num_pairs = 100u32;
+        let num_pairs = 100;
 
         let mut options = Options::new();
         options.create_if_missing = true;
@@ -150,7 +150,7 @@ mod tests {
     fn bench_put_rand(b: &mut Bencher) {
         let dir = TempDir::new("bench_put_rand").unwrap();
         let path = dir.path();
-        let num_pairs = 100u32;
+        let num_pairs = 100;
 
         let mut options = Options::new();
         options.create_if_missing = true;
@@ -170,19 +170,15 @@ mod tests {
     }
 
     #[bench]
-    fn bench_get_rand(b: &mut Bencher) {
-        let n = 100u32;
-        let tempdir = setup_bench_db(n);
+    fn bench_get_seq(b: &mut Bencher) {
+        let num_pairs = 100;
+        let tempdir = setup_bench_db(num_pairs);
         let path = tempdir.path();
 
         let options = Options::new();
-        let database: Database<i32> = match Database::open(path, options) {
-            Ok(db) => { db },
-            Err(e) => { panic!("failed to open database: {:?}", e) }
-        };
+        let database: Database<i32> = Database::open(path, options).unwrap();
 
-        let mut keys: Vec<i32> = (0..n as i32).collect();
-        thread_rng().shuffle(&mut keys[..]);
+        let keys: Vec<i32> = (0..num_pairs as i32).collect();
 
         b.iter(|| {
             let mut i = 0usize;
@@ -194,4 +190,25 @@ mod tests {
         });
     }
 
+    #[bench]
+    fn bench_get_rand(b: &mut Bencher) {
+        let num_pairs = 100;
+        let tempdir = setup_bench_db(num_pairs);
+        let path = tempdir.path();
+
+        let options = Options::new();
+        let database: Database<i32> = Database::open(path, options).unwrap();
+
+        let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
+        thread_rng().shuffle(&mut keys[..]);
+
+        b.iter(|| {
+            let mut i = 0usize;
+            for key in &keys {
+                let read_opts = ReadOptions::new();
+                i = i + database.get(read_opts, key).unwrap().unwrap().len();
+            }
+            black_box(i);
+        });
+    }
 }

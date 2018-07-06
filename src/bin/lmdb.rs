@@ -96,7 +96,7 @@ mod tests {
 
     #[bench]
     fn bench_put_seq(b: &mut Bencher) {
-        let num_pairs = 100u32;
+        let num_pairs = 100;
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
@@ -114,7 +114,7 @@ mod tests {
 
     #[bench]
     fn bench_put_rand(b: &mut Bencher) {
-        let num_pairs = 100u32;
+        let num_pairs = 100;
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
@@ -132,13 +132,31 @@ mod tests {
     }
 
     #[bench]
-    fn bench_get_rand(b: &mut Bencher) {
-        let n = 100u32;
-        let (_dir, env) = setup_bench_db(n);
+    fn bench_get_seq(b: &mut Bencher) {
+        let num_pairs = 100;
+        let (_dir, env) = setup_bench_db(num_pairs);
         let db = env.open_db(None).unwrap();
         let txn = env.begin_ro_txn().unwrap();
 
-        let mut keys: Vec<[u8; 4]> = (0..n).map(|n| get_key(n)).collect();
+        let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
+
+        b.iter(|| {
+            let mut i = 0usize;
+            for key in &keys {
+                i = i + txn.get(db, key).unwrap().len();
+            }
+            black_box(i);
+        });
+    }
+
+    #[bench]
+    fn bench_get_rand(b: &mut Bencher) {
+        let num_pairs = 100;
+        let (_dir, env) = setup_bench_db(num_pairs);
+        let db = env.open_db(None).unwrap();
+        let txn = env.begin_ro_txn().unwrap();
+
+        let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
         thread_rng().shuffle(&mut keys[..]);
 
         b.iter(|| {
@@ -147,6 +165,27 @@ mod tests {
                 i = i + txn.get(db, key).unwrap().len();
             }
             black_box(i);
+        });
+    }
+
+    #[bench]
+    fn bench_delete(b: &mut Bencher) {
+        let num_pairs = 100;
+        let (_dir, env) = setup_bench_db(num_pairs);
+        let db = env.open_db(None).unwrap();
+
+        let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+
+        b.iter(|| {
+            let mut txn = env.begin_rw_txn().unwrap();
+            for (key, value) in &pairs {
+                txn.put(db, key, value, WriteFlags::empty()).unwrap();
+            }
+            txn.commit().unwrap();
+            let mut txn = env.begin_rw_txn().unwrap();
+            for (key, _value) in &pairs {
+                txn.del(db, key, None).unwrap();
+            }
         });
     }
 
