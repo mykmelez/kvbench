@@ -46,18 +46,18 @@ mod tests {
     };
     use tempdir::TempDir;
 
-    use self::rand::{Rng, XorShiftRng};
+    use self::rand::{Rng, thread_rng};
     use self::test::{Bencher, black_box};
 
-    pub fn get_key(n: u32) -> String {
+    fn get_key(n: u32) -> String {
         format!("key{}", n)
     }
 
-    pub fn get_data(n: u32) -> String {
+    fn get_value(n: u32) -> String {
         format!("data{}", n)
     }
 
-    pub fn setup_bench_db<'a>(num_rows: u32) -> (TempDir, Environment) {
+    fn setup_bench_db<'a>(num_rows: u32) -> (TempDir, Environment) {
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
 
@@ -65,7 +65,7 @@ mod tests {
             let db = env.open_db(None).unwrap();
             let mut txn = env.begin_rw_txn().unwrap();
             for i in 0..num_rows {
-                txn.put(db, &get_key(i), &get_data(i), WriteFlags::empty()).unwrap();
+                txn.put(db, &get_key(i), &get_value(i), WriteFlags::empty()).unwrap();
             }
             txn.commit().unwrap();
         }
@@ -73,10 +73,49 @@ mod tests {
     }
 
     #[bench]
-    fn bench_setup_bench_db(b: &mut Bencher) {
-        let n = 100u32;
+    fn bench_open_db(b: &mut Bencher) {
+        let dir = TempDir::new("test").unwrap();
+
         b.iter(|| {
-            let (_dir, _env) = setup_bench_db(n);
+            let env = Environment::new().open(dir.path()).unwrap();
+            let _db = env.open_db(None).unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_seq(b: &mut Bencher) {
+        let n = 100u32;
+        let dir = TempDir::new("test").unwrap();
+        let env = Environment::new().open(dir.path()).unwrap();
+        let db = env.open_db(None).unwrap();
+
+        let keys: Vec<(String, String)> = (0..n).map(|n| (get_key(n), get_value(n))).collect();
+
+        b.iter(|| {
+            let mut txn = env.begin_rw_txn().unwrap();
+            for (key, value) in &keys {
+                txn.put(db, key, value, WriteFlags::empty()).unwrap();
+            }
+            txn.commit().unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_rand(b: &mut Bencher) {
+        let n = 100u32;
+        let dir = TempDir::new("test").unwrap();
+        let env = Environment::new().open(dir.path()).unwrap();
+        let db = env.open_db(None).unwrap();
+
+        let mut keys: Vec<(String, String)> = (0..n).map(|n| (get_key(n), get_value(n))).collect();
+        thread_rng().shuffle(&mut keys[..]);
+
+        b.iter(|| {
+            let mut txn = env.begin_rw_txn().unwrap();
+            for (key, value) in &keys {
+                txn.put(db, key, value, WriteFlags::empty()).unwrap();
+            }
+            txn.commit().unwrap();
         });
     }
 
@@ -88,7 +127,7 @@ mod tests {
         let txn = env.begin_ro_txn().unwrap();
 
         let mut keys: Vec<String> = (0..n).map(|n| get_key(n)).collect();
-        XorShiftRng::new_unseeded().shuffle(&mut keys[..]);
+        thread_rng().shuffle(&mut keys[..]);
 
         b.iter(|| {
             let mut i = 0usize;

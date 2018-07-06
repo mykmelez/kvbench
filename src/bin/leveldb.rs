@@ -48,6 +48,10 @@ mod tests {
     extern crate rand;
     extern crate test;
 
+    use leveldb::database::batch::{
+        Batch,
+        Writebatch,
+    };
     use leveldb::database::Database;
     use leveldb::kv::KV;
     use leveldb::options::{
@@ -57,15 +61,15 @@ mod tests {
     };
     use self::rand::{
         Rng,
-        XorShiftRng,
+        thread_rng,
     };
-    use tempdir::TempDir;
     use self::test::{
         Bencher,
         black_box,
     };
+    use tempdir::TempDir;
 
-    pub fn get_data(n: u32) -> String {
+    pub fn get_value(n: u32) -> String {
         format!("data{}", n)
     }
 
@@ -84,11 +88,36 @@ mod tests {
         let write_opts = WriteOptions::new();
 
         for i in 0..num_rows {
-            match database.put(write_opts, i as i32, get_data(i).as_str().as_bytes()) {
+            match database.put(write_opts, i as i32, get_value(i).as_str().as_bytes()) {
                 Ok(_) => { () },
                 Err(e) => { panic!("failed to write to database: {:?}", e) }
             };
         }
+
+        tempdir
+    }
+
+    pub fn setup_bench_db_batch<'a>(num_rows: u32) -> TempDir {
+        let tempdir = TempDir::new("demo").unwrap();
+        let path_buf = tempdir.path().to_path_buf();
+        let path = path_buf.as_path();
+
+        let mut options = Options::new();
+        options.create_if_missing = true;
+        let database = match Database::open(path, options) {
+            Ok(db) => { db },
+            Err(e) => { panic!("failed to open database: {:?}", e) }
+        };
+
+        let batch = &mut Writebatch::new();
+        for i in 0..num_rows {
+            batch.put(i as i32, get_value(i).as_str().as_bytes());
+        }
+        let write_opts = WriteOptions::new();
+        match database.write(write_opts, batch) {
+            Ok(_) => { () },
+            Err(e) => { panic!("failed to write to database: {:?}", e) }
+        };
 
         tempdir
     }
@@ -98,6 +127,14 @@ mod tests {
         let n = 100u32;
         b.iter(|| {
             let _dir = setup_bench_db(n);
+        });
+    }
+
+    #[bench]
+    fn bench_setup_bench_db_batch(b: &mut Bencher) {
+        let n = 100u32;
+        b.iter(|| {
+            let _dir = setup_bench_db_batch(n);
         });
     }
 
@@ -114,7 +151,7 @@ mod tests {
         };
 
         let mut keys: Vec<i32> = (0..n as i32).collect();
-        XorShiftRng::new_unseeded().shuffle(&mut keys[..]);
+        thread_rng().shuffle(&mut keys[..]);
 
         b.iter(|| {
             let mut i = 0usize;
