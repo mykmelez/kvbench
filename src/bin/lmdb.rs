@@ -219,27 +219,6 @@ mod tests {
         });
     }
 
-    #[bench]
-    fn bench_delete(b: &mut Bencher) {
-        let num_pairs = 100;
-        let (_dir, env) = setup_bench_db(num_pairs);
-        let db = env.open_db(None).unwrap();
-
-        let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-
-        b.iter(|| {
-            let mut txn = env.begin_rw_txn().unwrap();
-            for (key, value) in &pairs {
-                txn.put(db, key, value, WriteFlags::empty()).unwrap();
-            }
-            txn.commit().unwrap();
-            let mut txn = env.begin_rw_txn().unwrap();
-            for (key, _value) in &pairs {
-                txn.del(db, key, None).unwrap();
-            }
-        });
-    }
-
     /// Benchmark of iterator sequential read performance.
     #[bench]
     fn bench_get_seq_iter(b: &mut Bencher) {
