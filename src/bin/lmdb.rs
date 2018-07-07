@@ -43,6 +43,7 @@ mod tests {
     use lmdb::{
         Cursor,
         Environment,
+        EnvironmentFlags,
         Transaction,
         WriteFlags,
     };
@@ -98,7 +99,7 @@ mod tests {
     }
 
     #[bench]
-    fn bench_put_seq(b: &mut Bencher) {
+    fn bench_put_seq_sync(b: &mut Bencher) {
         let num_pairs = 100;
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
@@ -116,10 +117,57 @@ mod tests {
     }
 
     #[bench]
-    fn bench_put_rand(b: &mut Bencher) {
+    fn bench_put_seq_async(b: &mut Bencher) {
+        let num_pairs = 100;
+        let dir = TempDir::new("test").unwrap();
+        // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
+        // environment flags to make them async (along with using a writeable
+        // memory map).
+        let env = Environment::new()
+            .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
+            .open(dir.path()).unwrap();
+        let db = env.open_db(None).unwrap();
+
+        let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+
+        b.iter(|| {
+            let mut txn = env.begin_rw_txn().unwrap();
+            for (key, value) in &pairs {
+                txn.put(db, key, value, WriteFlags::empty()).unwrap();
+            }
+            txn.commit().unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_rand_sync(b: &mut Bencher) {
         let num_pairs = 100;
         let dir = TempDir::new("test").unwrap();
         let env = Environment::new().open(dir.path()).unwrap();
+        let db = env.open_db(None).unwrap();
+
+        let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+        thread_rng().shuffle(&mut pairs[..]);
+
+        b.iter(|| {
+            let mut txn = env.begin_rw_txn().unwrap();
+            for (key, value) in &pairs {
+                txn.put(db, key, value, WriteFlags::empty()).unwrap();
+            }
+            txn.commit().unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_rand_async(b: &mut Bencher) {
+        let num_pairs = 100;
+        let dir = TempDir::new("test").unwrap();
+        // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
+        // environment flags to make them async (along with using a writeable
+        // memory map).
+        let env = Environment::new()
+            .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
+            .open(dir.path()).unwrap();
         let db = env.open_db(None).unwrap();
 
         let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
@@ -215,6 +263,8 @@ mod tests {
         });
     }
 
+    // This measures space on disk, not time, reflecting the space taken
+    // by a database on disk into the time it takes the benchmark to complete.
     #[bench]
     fn bench_db_size(b: &mut Bencher) {
         let num_pairs = 100;

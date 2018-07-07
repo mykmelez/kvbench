@@ -20,16 +20,10 @@ fn main() {
 
     let mut options = Options::new();
     options.create_if_missing = true;
-    let database = match Database::open(path, options) {
-        Ok(db) => { db },
-        Err(e) => { panic!("failed to open database: {:?}", e) }
-    };
+    let database = Database::open(path, options).unwrap();
 
     let write_opts = WriteOptions::new();
-    match database.put(write_opts, 1, &[1]) {
-        Ok(_) => { () },
-        Err(e) => { panic!("failed to write to database: {:?}", e) }
-    };
+    database.put(write_opts, 1, &[1]).unwrap();
 
     let read_opts = ReadOptions::new();
     let res = database.get(read_opts, 1);
@@ -92,20 +86,15 @@ mod tests {
 
         let mut options = Options::new();
         options.create_if_missing = true;
-        let database = match Database::open(path, options) {
-            Ok(db) => { db },
-            Err(e) => { panic!("failed to open database: {:?}", e) }
-        };
+        let database = Database::open(path, options).unwrap();
 
         let batch = &mut Writebatch::new();
         for i in 0..num_pairs {
             batch.put(i as i32, &get_value(i));
         }
-        let write_opts = WriteOptions::new();
-        match database.write(write_opts, batch) {
-            Ok(_) => { () },
-            Err(e) => { panic!("failed to write to database: {:?}", e) }
-        };
+        let mut write_opts = WriteOptions::new();
+        write_opts.sync = true;
+        database.write(write_opts, batch).unwrap();
 
         tempdir
     }
@@ -129,7 +118,32 @@ mod tests {
     }
 
     #[bench]
-    fn bench_put_seq(b: &mut Bencher) {
+    fn bench_put_seq_sync(b: &mut Bencher) {
+        let dir = TempDir::new("bench_put_seq").unwrap();
+        let path = dir.path();
+        let num_pairs = 100;
+
+        let mut options = Options::new();
+        options.create_if_missing = true;
+        let db: Database<i32> = Database::open(path, options).unwrap();
+
+        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+
+        b.iter(|| {
+            let batch = &mut Writebatch::new();
+            for (key, value) in &pairs {
+                batch.put(*key, value);
+            }
+            let mut write_opts = WriteOptions::new();
+            // LevelDB writes are async by default.  Set the WriteOptions::sync
+            // flag to true to make them sync.
+            write_opts.sync = true;
+            db.write(write_opts, batch).unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_seq_async(b: &mut Bencher) {
         let dir = TempDir::new("bench_put_seq").unwrap();
         let path = dir.path();
         let num_pairs = 100;
@@ -151,8 +165,8 @@ mod tests {
     }
 
     #[bench]
-    fn bench_put_rand(b: &mut Bencher) {
-        let dir = TempDir::new("bench_put_rand").unwrap();
+    fn bench_put_rand_sync(b: &mut Bencher) {
+        let dir = TempDir::new("bench_put_rand_sync").unwrap();
         let path = dir.path();
         let num_pairs = 100;
 
@@ -169,6 +183,32 @@ mod tests {
                 batch.put(*key, value);
             }
             let write_opts = WriteOptions::new();
+            db.write(write_opts, batch).unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_put_rand_async(b: &mut Bencher) {
+        let dir = TempDir::new("bench_put_rand_async").unwrap();
+        let path = dir.path();
+        let num_pairs = 100;
+
+        let mut options = Options::new();
+        options.create_if_missing = true;
+        let db: Database<i32> = Database::open(path, options).unwrap();
+
+        let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+        thread_rng().shuffle(&mut pairs[..]);
+
+        b.iter(|| {
+            let batch = &mut Writebatch::new();
+            for (key, value) in &pairs {
+                batch.put(*key, value);
+            }
+            let mut write_opts = WriteOptions::new();
+            // LevelDB writes are async by default.  Set the WriteOptions::sync
+            // flag to true to make them sync.
+            write_opts.sync = true;
             db.write(write_opts, batch).unwrap();
         });
     }
@@ -243,6 +283,8 @@ mod tests {
         });
     }
 
+    // This measures space on disk, not time, reflecting the space taken
+    // by a database on disk into the time it takes the benchmark to complete.
     #[bench]
     fn bench_db_size(b: &mut Bencher) {
         let num_pairs = 100;
