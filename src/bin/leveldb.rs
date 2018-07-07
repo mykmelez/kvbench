@@ -47,6 +47,7 @@ fn main() {
 mod tests {
     extern crate rand;
     extern crate test;
+    extern crate walkdir;
 
     use leveldb::database::batch::{
         Batch,
@@ -68,6 +69,8 @@ mod tests {
         Bencher,
         black_box,
     };
+    use self::walkdir::WalkDir;
+    use std::{thread, time};
     use tempdir::TempDir;
 
     pub fn get_key(n: u32) -> i32 {
@@ -240,4 +243,23 @@ mod tests {
         });
     }
 
+    #[bench]
+    fn bench_db_size(b: &mut Bencher) {
+        let num_pairs = 100;
+        let dir = setup_bench_db(num_pairs);
+        let mut total_size = 0;
+
+        for entry in WalkDir::new(dir.path()) {
+            let metadata = entry.unwrap().metadata().unwrap();
+            if metadata.is_file() {
+                total_size += metadata.len();
+            }
+        }
+
+        b.iter(|| {
+            // Convert size on disk to benchmark time by sleeping
+            // for the total_size number of nanoseconds.
+            thread::sleep(time::Duration::from_nanos(total_size));
+        });
+    }
 }

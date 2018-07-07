@@ -38,6 +38,7 @@ fn main() {
 mod tests {
     extern crate rand;
     extern crate test;
+    extern crate walkdir;
 
     use lmdb::{
         Cursor,
@@ -45,10 +46,11 @@ mod tests {
         Transaction,
         WriteFlags,
     };
-    use tempdir::TempDir;
-
     use self::rand::{Rng, thread_rng};
     use self::test::{Bencher, black_box};
+    use self::walkdir::WalkDir;
+    use std::{thread, time};
+    use tempdir::TempDir;
 
     fn get_key(n: u32) -> [u8; 4] {
         n.to_bytes()
@@ -193,8 +195,8 @@ mod tests {
     /// Benchmark of iterator sequential read performance.
     #[bench]
     fn bench_get_seq_iter(b: &mut Bencher) {
-        let n = 100;
-        let (_dir, env) = setup_bench_db(n);
+        let num_pairs = 100;
+        let (_dir, env) = setup_bench_db(num_pairs);
         let db = env.open_db(None).unwrap();
         let txn = env.begin_ro_txn().unwrap();
 
@@ -209,7 +211,27 @@ mod tests {
             }
 
             black_box(i);
-            assert_eq!(count, n);
+            assert_eq!(count, num_pairs);
+        });
+    }
+
+    #[bench]
+    fn bench_db_size(b: &mut Bencher) {
+        let num_pairs = 100;
+        let (dir, _env) = setup_bench_db(num_pairs);
+        let mut total_size = 0;
+
+        for entry in WalkDir::new(dir.path()) {
+            let metadata = entry.unwrap().metadata().unwrap();
+            if metadata.is_file() {
+                total_size += metadata.len();
+            }
+        }
+
+        b.iter(|| {
+            // Convert size on disk to benchmark time by sleeping
+            // for the total_size number of nanoseconds.
+            thread::sleep(time::Duration::from_nanos(total_size));
         });
     }
 
