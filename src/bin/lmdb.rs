@@ -40,6 +40,7 @@ mod tests {
     extern crate test;
 
     use lmdb::{
+        Cursor,
         Environment,
         Transaction,
         WriteFlags,
@@ -186,6 +187,29 @@ mod tests {
             for (key, _value) in &pairs {
                 txn.del(db, key, None).unwrap();
             }
+        });
+    }
+
+    /// Benchmark of iterator sequential read performance.
+    #[bench]
+    fn bench_get_seq_iter(b: &mut Bencher) {
+        let n = 100;
+        let (_dir, env) = setup_bench_db(n);
+        let db = env.open_db(None).unwrap();
+        let txn = env.begin_ro_txn().unwrap();
+
+        b.iter(|| {
+            let mut cursor = txn.open_ro_cursor(db).unwrap();
+            let mut i = 0;
+            let mut count = 0u32;
+
+            for (key, data) in cursor.iter() {
+                i = i + key.len() + data.len();
+                count = count + 1;
+            }
+
+            black_box(i);
+            assert_eq!(count, n);
         });
     }
 

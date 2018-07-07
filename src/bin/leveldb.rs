@@ -53,6 +53,7 @@ mod tests {
         Writebatch,
     };
     use leveldb::database::Database;
+    use leveldb::iterator::Iterable;
     use leveldb::kv::KV;
     use leveldb::options::{
         Options,
@@ -211,4 +212,32 @@ mod tests {
             black_box(i);
         });
     }
+
+    #[bench]
+    fn bench_get_seq_iter(b: &mut Bencher) {
+        let num_pairs = 100;
+        let tempdir = setup_bench_db(num_pairs);
+        let path = tempdir.path();
+
+        let options = Options::new();
+        let database: Database<i32> = Database::open(path, options).unwrap();
+
+        let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
+        thread_rng().shuffle(&mut keys[..]);
+
+        b.iter(|| {
+            let mut i = 0;
+            let mut count = 0u32;
+            let read_opts = ReadOptions::new();
+
+            for (key, data) in database.iter(read_opts) {
+                i = i + key as usize + data.len();
+                count = count + 1;
+            }
+
+            black_box(i);
+            assert_eq!(count, num_pairs);
+        });
+    }
+
 }
