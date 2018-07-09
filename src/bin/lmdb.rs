@@ -29,7 +29,7 @@ use lmdb::{
 use tempdir::TempDir;
 
 fn main() {
-    let dir = TempDir::new("test").unwrap();
+    let dir = TempDir::new("example").unwrap();
     let env = Environment::new().open(dir.path()).unwrap();
     let db = env.open_db(None).unwrap();
 
@@ -101,6 +101,7 @@ mod tests {
             }
             txn.commit().unwrap();
         }
+
         (dir, env)
     }
 

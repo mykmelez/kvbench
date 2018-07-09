@@ -20,6 +20,10 @@
 extern crate leveldb;
 extern crate tempdir;
 
+use leveldb::database::batch::{
+    Batch,
+    Writebatch,
+};
 use leveldb::database::Database;
 use leveldb::kv::KV;
 use leveldb::options::{
@@ -30,28 +34,23 @@ use leveldb::options::{
 use tempdir::TempDir;
 
 fn main() {
-    // Based on the example in the README for https://github.com/skade/leveldb.
-
-    let tempdir = TempDir::new("demo").unwrap();
-    let path = tempdir.path();
-
+    let dir = TempDir::new("example").unwrap();
     let mut options = Options::new();
     options.create_if_missing = true;
-    let database = Database::open(path, options).unwrap();
+    let database = Database::open(dir.path(), options).unwrap();
 
-    let write_opts = WriteOptions::new();
-    database.put(write_opts, 1, &[1]).unwrap();
+    let batch = &mut Writebatch::new();
+    batch.put(1, b"val1");
+    batch.put(2, b"val2");
+    batch.put(3, b"val3");
+    database.write(WriteOptions::new(), batch).unwrap();
 
-    let read_opts = ReadOptions::new();
-    let res = database.get(read_opts, 1);
+    assert_eq!(database.get(ReadOptions::new(), 1).unwrap().unwrap(), b"val1");
+    assert_eq!(database.get(ReadOptions::new(), 2).unwrap().unwrap(), b"val2");
+    assert_eq!(database.get(ReadOptions::new(), 3).unwrap().unwrap(), b"val3");
 
-    match res {
-        Ok(data) => {
-            assert!(data.is_some());
-            assert_eq!(data, Some(vec![1]));
-        },
-        Err(e) => panic!("failed reading data: {:?}", e),
-    }
+    database.delete(WriteOptions::new(), 1).unwrap();
+    assert_eq!(database.get(ReadOptions::new(), 1).unwrap(), None);
 }
 
 #[cfg(test)]
@@ -100,13 +99,11 @@ mod tests {
     }
 
     pub fn setup_bench_db(num_pairs: u32) -> TempDir {
-        let tempdir = TempDir::new("demo").unwrap();
-        let path_buf = tempdir.path().to_path_buf();
-        let path = path_buf.as_path();
+        let dir = TempDir::new("demo").unwrap();
 
         let mut options = Options::new();
         options.create_if_missing = true;
-        let database = Database::open(path, options).unwrap();
+        let database = Database::open(dir.path(), options).unwrap();
 
         let batch = &mut Writebatch::new();
         for i in 0..num_pairs {
@@ -116,7 +113,7 @@ mod tests {
         write_opts.sync = true;
         database.write(write_opts, batch).unwrap();
 
-        tempdir
+        dir
     }
 
     #[bench]
@@ -236,8 +233,8 @@ mod tests {
     #[bench]
     fn bench_get_seq(b: &mut Bencher) {
         let num_pairs = 100;
-        let tempdir = setup_bench_db(num_pairs);
-        let path = tempdir.path();
+        let dir = setup_bench_db(num_pairs);
+        let path = dir.path();
 
         let options = Options::new();
         let database: Database<i32> = Database::open(path, options).unwrap();
@@ -257,8 +254,8 @@ mod tests {
     #[bench]
     fn bench_get_rand(b: &mut Bencher) {
         let num_pairs = 100;
-        let tempdir = setup_bench_db(num_pairs);
-        let path = tempdir.path();
+        let dir = setup_bench_db(num_pairs);
+        let path = dir.path();
 
         let options = Options::new();
         let database: Database<i32> = Database::open(path, options).unwrap();
@@ -279,8 +276,8 @@ mod tests {
     #[bench]
     fn bench_get_seq_iter(b: &mut Bencher) {
         let num_pairs = 100;
-        let tempdir = setup_bench_db(num_pairs);
-        let path = tempdir.path();
+        let dir = setup_bench_db(num_pairs);
+        let path = dir.path();
 
         let options = Options::new();
         let database: Database<i32> = Database::open(path, options).unwrap();
