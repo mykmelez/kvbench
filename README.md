@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mykmelez/kv-bench.svg?branch=master)](https://travis-ci.org/mykmelez/kv-bench)
+
 # kv-bench
 
 This repo contains a set of benchmarks for the LMDB and LevelDB key-value storage engines.  Its purpose is to provide useful metrics on the relative performance of the two engines.  It may also prove useful for comparing disk footprint (of both the engines themselves and their storage files), memory footprint, reliability, and developer ergonomics.
