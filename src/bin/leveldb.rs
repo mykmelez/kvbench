@@ -24,8 +24,8 @@ use leveldb::database::Database;
 use leveldb::kv::KV;
 use leveldb::options::{
     Options,
-    WriteOptions,
     ReadOptions,
+    WriteOptions,
 };
 use tempdir::TempDir;
 
@@ -49,8 +49,8 @@ fn main() {
         Ok(data) => {
             assert!(data.is_some());
             assert_eq!(data, Some(vec![1]));
-        }
-        Err(e) => { panic!("failed reading data: {:?}", e) }
+        },
+        Err(e) => panic!("failed reading data: {:?}", e),
     }
 }
 
@@ -60,6 +60,15 @@ mod tests {
     extern crate test;
     extern crate walkdir;
 
+    use self::rand::{
+        thread_rng,
+        Rng,
+    };
+    use self::test::{
+        black_box,
+        Bencher,
+    };
+    use self::walkdir::WalkDir;
     use leveldb::database::batch::{
         Batch,
         Writebatch,
@@ -72,16 +81,10 @@ mod tests {
         ReadOptions,
         WriteOptions,
     };
-    use self::rand::{
-        Rng,
-        thread_rng,
+    use std::{
+        thread,
+        time,
     };
-    use self::test::{
-        Bencher,
-        black_box,
-    };
-    use self::walkdir::WalkDir;
-    use std::{thread, time};
     use tempdir::TempDir;
 
     pub fn get_key(n: u32) -> i32 {

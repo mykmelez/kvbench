@@ -55,6 +55,15 @@ mod tests {
     extern crate test;
     extern crate walkdir;
 
+    use self::rand::{
+        thread_rng,
+        Rng,
+    };
+    use self::test::{
+        black_box,
+        Bencher,
+    };
+    use self::walkdir::WalkDir;
     use lmdb::{
         Cursor,
         Environment,
@@ -62,10 +71,10 @@ mod tests {
         Transaction,
         WriteFlags,
     };
-    use self::rand::{Rng, thread_rng};
-    use self::test::{Bencher, black_box};
-    use self::walkdir::WalkDir;
-    use std::{thread, time};
+    use std::{
+        thread,
+        time,
+    };
     use tempdir::TempDir;
 
     fn get_key(n: u32) -> [u8; 4] {
@@ -140,7 +149,8 @@ mod tests {
         // memory map).
         let env = Environment::new()
             .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
-            .open(dir.path()).unwrap();
+            .open(dir.path())
+            .unwrap();
         let db = env.open_db(None).unwrap();
 
         let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
@@ -182,7 +192,8 @@ mod tests {
         // memory map).
         let env = Environment::new()
             .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
-            .open(dir.path()).unwrap();
+            .open(dir.path())
+            .unwrap();
         let db = env.open_db(None).unwrap();
 
         let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
