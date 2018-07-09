@@ -2,7 +2,7 @@
 
 This repo contains a set of benchmarks for the LMDB and LevelDB key-value storage engines.  Its purpose is to provide useful metrics on the relative performance of the two engines.  It may also prove useful for comparing disk footprint (of both the engines themselves and their storage files), memory footprint, reliability, and developer ergonomics.
 
-The benchmarks are written using the Rust language's built-in (albeit unstable) [support for benchmarking](https://doc.rust-lang.org/1.7.0/book/benchmark-tests.html).
+The benchmarks are written using the Rust language's built-in (albeit unstable) [support for benchmark testing](https://doc.rust-lang.org/unstable-book/library-features/test.html).
 
 # Use
 
@@ -49,7 +49,7 @@ Note that "db_size" bench is a measure of space, not time.  It reflects the size
 Here's an example of the relative disk footprint (in kilobytes) of the benchmarking programs, compared to a control program:
 
 ```sh
-> ls -1sk target/release/
+> cargo +nightly build --release && ls -1sk target/release/
  608 control
  860 leveldb
  684 lmdb
@@ -57,4 +57,4 @@ Here's an example of the relative disk footprint (in kilobytes) of the benchmark
 
 # Caveats
 
-A limitation of the approach is that the benchmarks rely on Rust wrappers (the [lmdb](https://github.com/danburkert/lmdb-rs) and [leveldb](https://crates.io/crates/leveldb) crates) rather than calling into the C/C++ storage engine libraries directly.  Thus any overhead in the wrappers will be incorrectly identified as a cost of the underlying libraries.
+A limitation of the approach is that the benchmarks rely on Rust wrappers—the [lmdb](https://github.com/danburkert/lmdb-rs) and [leveldb](https://crates.io/crates/leveldb) crates—rather than calling into the C/C++ storage engine libraries directly, so overhead in the wrappers will incorrectly accrue to the underlying libraries.
