@@ -1,0 +1,13 @@
+language: rust
+cache: cargo
+rust:
+  - nightly
+before_script:
+  - rustup toolchain install nightly-2018-07-08
+  - rustup component add rustfmt-preview --toolchain nightly-2018-07-08
+  - command -v rustfmt || cargo install --force rustfmt-nightly
+script:
+  - cargo +nightly-2018-07-08 fmt --all -- --check
+  - cargo bench --verbose
+  - cargo run --bin leveldb
+  - cargo run --bin lmdb
