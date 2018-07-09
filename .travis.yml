@@ -8,6 +8,6 @@ before_script:
   - command -v rustfmt || cargo install --force rustfmt-nightly
 script:
   - cargo +nightly-2018-07-08 fmt --all -- --check
-  - cargo bench --verbose
+  - cargo bench
   - cargo run --bin leveldb
   - cargo run --bin lmdb
