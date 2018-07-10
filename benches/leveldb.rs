@@ -89,9 +89,11 @@ fn bench_open_db(c: &mut Criterion) {
         let _db: Database<i32> = Database::open(dir.path(), options).unwrap();
     }
 
-    c.bench_function("leveldb_open_db", move |b| b.iter(|| {
-        let _db: Database<i32> = Database::open(dir.path(), Options::new()).unwrap();
-    }));
+    c.bench_function("leveldb_open_db", move |b| {
+        b.iter(|| {
+            let _db: Database<i32> = Database::open(dir.path(), Options::new()).unwrap();
+        })
+    });
 }
 
 fn bench_put_seq_sync(c: &mut Criterion) {
@@ -102,20 +104,24 @@ fn bench_put_seq_sync(c: &mut Criterion) {
     options.create_if_missing = true;
     let db: Database<i32> = Database::open(path, options).unwrap();
 
-    c.bench_function_over_inputs("leveldb_put_seq_sync", move |b, &&num_pairs| {
-        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-        b.iter(|| {
-            let batch = &mut Writebatch::new();
-            for (key, value) in &pairs {
-                batch.put(*key, value);
-            }
-            let mut write_opts = WriteOptions::new();
-            // LevelDB writes are async by default.  Set the WriteOptions::sync
-            // flag to true to make them sync.
-            write_opts.sync = true;
-            db.write(write_opts, batch).unwrap();
-        });
-    }, &[100]);
+    c.bench_function_over_inputs(
+        "leveldb_put_seq_sync",
+        move |b, &&num_pairs| {
+            let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+            b.iter(|| {
+                let batch = &mut Writebatch::new();
+                for (key, value) in &pairs {
+                    batch.put(*key, value);
+                }
+                let mut write_opts = WriteOptions::new();
+                // LevelDB writes are async by default.  Set the WriteOptions::sync
+                // flag to true to make them sync.
+                write_opts.sync = true;
+                db.write(write_opts, batch).unwrap();
+            });
+        },
+        &[100],
+    );
 }
 
 fn bench_put_seq_async(c: &mut Criterion) {
@@ -126,17 +132,21 @@ fn bench_put_seq_async(c: &mut Criterion) {
     options.create_if_missing = true;
     let db: Database<i32> = Database::open(path, options).unwrap();
 
-    c.bench_function_over_inputs("leveldb_put_seq_async", move |b, &&num_pairs| {
-        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-        b.iter(|| {
-            let batch = &mut Writebatch::new();
-            for (key, value) in &pairs {
-                batch.put(*key, value);
-            }
-            let write_opts = WriteOptions::new();
-            db.write(write_opts, batch).unwrap();
-        });
-    }, &[100]);
+    c.bench_function_over_inputs(
+        "leveldb_put_seq_async",
+        move |b, &&num_pairs| {
+            let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+            b.iter(|| {
+                let batch = &mut Writebatch::new();
+                for (key, value) in &pairs {
+                    batch.put(*key, value);
+                }
+                let write_opts = WriteOptions::new();
+                db.write(write_opts, batch).unwrap();
+            });
+        },
+        &[100],
+    );
 }
 
 fn bench_put_rand_sync(c: &mut Criterion) {
@@ -147,21 +157,25 @@ fn bench_put_rand_sync(c: &mut Criterion) {
     options.create_if_missing = true;
     let db: Database<i32> = Database::open(path, options).unwrap();
 
-    c.bench_function_over_inputs("leveldb_put_rand_sync", move |b, &&num_pairs| {
-        let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-        thread_rng().shuffle(&mut pairs[..]);
-        b.iter(|| {
-            let batch = &mut Writebatch::new();
-            for (key, value) in &pairs {
-                batch.put(*key, value);
-            }
-            let mut write_opts = WriteOptions::new();
-            // LevelDB writes are async by default.  Set the WriteOptions::sync
-            // flag to true to make them sync.
-            write_opts.sync = true;
-            db.write(write_opts, batch).unwrap();
-        });
-    }, &[100]);
+    c.bench_function_over_inputs(
+        "leveldb_put_rand_sync",
+        move |b, &&num_pairs| {
+            let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+            thread_rng().shuffle(&mut pairs[..]);
+            b.iter(|| {
+                let batch = &mut Writebatch::new();
+                for (key, value) in &pairs {
+                    batch.put(*key, value);
+                }
+                let mut write_opts = WriteOptions::new();
+                // LevelDB writes are async by default.  Set the WriteOptions::sync
+                // flag to true to make them sync.
+                write_opts.sync = true;
+                db.write(write_opts, batch).unwrap();
+            });
+        },
+        &[100],
+    );
 }
 
 fn bench_put_rand_async(c: &mut Criterion) {
@@ -172,18 +186,22 @@ fn bench_put_rand_async(c: &mut Criterion) {
     options.create_if_missing = true;
     let db: Database<i32> = Database::open(path, options).unwrap();
 
-    c.bench_function_over_inputs("leveldb_put_rand_async", move |b, &&num_pairs| {
-        let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-        thread_rng().shuffle(&mut pairs[..]);
-        b.iter(|| {
-            let batch = &mut Writebatch::new();
-            for (key, value) in &pairs {
-                batch.put(*key, value);
-            }
-            let write_opts = WriteOptions::new();
-            db.write(write_opts, batch).unwrap();
-        });
-    }, &[100]);
+    c.bench_function_over_inputs(
+        "leveldb_put_rand_async",
+        move |b, &&num_pairs| {
+            let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+            thread_rng().shuffle(&mut pairs[..]);
+            b.iter(|| {
+                let batch = &mut Writebatch::new();
+                for (key, value) in &pairs {
+                    batch.put(*key, value);
+                }
+                let write_opts = WriteOptions::new();
+                db.write(write_opts, batch).unwrap();
+            });
+        },
+        &[100],
+    );
 }
 
 fn bench_get_seq(c: &mut Criterion) {
@@ -196,13 +214,15 @@ fn bench_get_seq(c: &mut Criterion) {
 
     let keys: Vec<i32> = (0..num_pairs as i32).collect();
 
-    c.bench_function("leveldb_get_seq", move |b| b.iter(|| {
-        let mut i = 0usize;
-        for key in &keys {
-            let read_opts = ReadOptions::new();
-            i = i + database.get(read_opts, key).unwrap().unwrap().len();
-        }
-    }));
+    c.bench_function("leveldb_get_seq", move |b| {
+        b.iter(|| {
+            let mut i = 0usize;
+            for key in &keys {
+                let read_opts = ReadOptions::new();
+                i = i + database.get(read_opts, key).unwrap().unwrap().len();
+            }
+        })
+    });
 }
 
 fn bench_get_rand(c: &mut Criterion) {
@@ -216,13 +236,15 @@ fn bench_get_rand(c: &mut Criterion) {
     let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
     thread_rng().shuffle(&mut keys[..]);
 
-    c.bench_function("leveldb_get_rand", move |b| b.iter(|| {
-        let mut i = 0usize;
-        for key in &keys {
-            let read_opts = ReadOptions::new();
-            i = i + database.get(read_opts, key).unwrap().unwrap().len();
-        }
-    }));
+    c.bench_function("leveldb_get_rand", move |b| {
+        b.iter(|| {
+            let mut i = 0usize;
+            for key in &keys {
+                let read_opts = ReadOptions::new();
+                i = i + database.get(read_opts, key).unwrap().unwrap().len();
+            }
+        })
+    });
 }
 
 fn bench_get_seq_iter(c: &mut Criterion) {
@@ -236,18 +258,20 @@ fn bench_get_seq_iter(c: &mut Criterion) {
     let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
     thread_rng().shuffle(&mut keys[..]);
 
-    c.bench_function("leveldb_get_seq_iter", move |b| b.iter(|| {
-        let mut i = 0;
-        let mut count = 0u32;
-        let read_opts = ReadOptions::new();
+    c.bench_function("leveldb_get_seq_iter", move |b| {
+        b.iter(|| {
+            let mut i = 0;
+            let mut count = 0u32;
+            let read_opts = ReadOptions::new();
 
-        for (key, data) in database.iter(read_opts) {
-            i = i + key as usize + data.len();
-            count = count + 1;
-        }
+            for (key, data) in database.iter(read_opts) {
+                i = i + key as usize + data.len();
+                count = count + 1;
+            }
 
-        assert_eq!(count, num_pairs);
-    }));
+            assert_eq!(count, num_pairs);
+        })
+    });
 }
 
 // This measures space on disk, not time, reflecting the space taken
@@ -264,14 +288,17 @@ fn bench_db_size(c: &mut Criterion) {
         }
     }
 
-    c.bench_function("leveldb_db_size", move |b| b.iter(|| {
-        // Convert size on disk to benchmark time by sleeping
-        // for the total_size number of nanoseconds.
-        thread::sleep(time::Duration::from_nanos(total_size));
-    }));
+    c.bench_function("leveldb_db_size", move |b| {
+        b.iter(|| {
+            // Convert size on disk to benchmark time by sleeping
+            // for the total_size number of nanoseconds.
+            thread::sleep(time::Duration::from_nanos(total_size));
+        })
+    });
 }
 
-criterion_group!(benches,
+criterion_group!(
+    benches,
     bench_open_db,
     bench_put_seq_sync,
     bench_put_seq_async,
