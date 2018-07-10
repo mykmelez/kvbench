@@ -205,7 +205,10 @@ mod tests {
             for (key, value) in &pairs {
                 batch.put(*key, value);
             }
-            let write_opts = WriteOptions::new();
+            let mut write_opts = WriteOptions::new();
+            // LevelDB writes are async by default.  Set the WriteOptions::sync
+            // flag to true to make them sync.
+            write_opts.sync = true;
             db.write(write_opts, batch).unwrap();
         });
     }
@@ -228,10 +231,7 @@ mod tests {
             for (key, value) in &pairs {
                 batch.put(*key, value);
             }
-            let mut write_opts = WriteOptions::new();
-            // LevelDB writes are async by default.  Set the WriteOptions::sync
-            // flag to true to make them sync.
-            write_opts.sync = true;
+            let write_opts = WriteOptions::new();
             db.write(write_opts, batch).unwrap();
         });
     }
