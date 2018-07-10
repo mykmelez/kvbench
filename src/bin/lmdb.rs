@@ -15,8 +15,6 @@
 // Portions of this code were copied or adapted from lmdb-rs
 // <https://github.com/danburkert/lmdb-rs>, which is written by Dan Burkert.
 
-#![feature(test)]
-
 extern crate lmdb;
 extern crate tempdir;
 
