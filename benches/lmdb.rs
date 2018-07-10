@@ -88,20 +88,18 @@ fn bench_open_db(c: &mut Criterion) {
 }
 
 fn bench_put_seq_sync(c: &mut Criterion) {
-    let num_pairs = 100;
     let dir = TempDir::new("test").unwrap();
     let env = Environment::new().open(dir.path()).unwrap();
     let db = env.open_db(None).unwrap();
 
-    let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-
-    c.bench_function("put_seq_sync", move |b| b.iter(|| {
+    c.bench_function_over_inputs("put_seq_sync", move |b, &&num_pairs| b.iter(|| {
+	    let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
         let mut txn = env.begin_rw_txn().unwrap();
         for (key, value) in &pairs {
             txn.put(db, key, value, WriteFlags::empty()).unwrap();
         }
         txn.commit().unwrap();
-    }));
+    }), &[100]);
 }
 
 fn bench_put_seq_async(c: &mut Criterion) {

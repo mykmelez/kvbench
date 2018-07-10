@@ -97,15 +97,13 @@ fn bench_open_db(c: &mut Criterion) {
 fn bench_put_seq_sync(c: &mut Criterion) {
     let dir = TempDir::new("bench_put_seq").unwrap();
     let path = dir.path();
-    let num_pairs = 100;
 
     let mut options = Options::new();
     options.create_if_missing = true;
     let db: Database<i32> = Database::open(path, options).unwrap();
 
-    let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-
-    c.bench_function("put_seq_sync", move |b| b.iter(|| {
+    c.bench_function_over_inputs("put_seq_sync", move |b, &&num_pairs| b.iter(|| {
+        let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
         let batch = &mut Writebatch::new();
         for (key, value) in &pairs {
             batch.put(*key, value);
@@ -115,7 +113,7 @@ fn bench_put_seq_sync(c: &mut Criterion) {
         // flag to true to make them sync.
         write_opts.sync = true;
         db.write(write_opts, batch).unwrap();
-    }));
+    }), &[100]);
 }
 
 fn bench_put_seq_async(c: &mut Criterion) {
