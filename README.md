@@ -17,33 +17,33 @@ cargo +nightly bench
 Here's an example benchmark run:
 
 ```
-     Running target/release/deps/leveldb-a8f0442a215d9284
+     Running target/release/deps/leveldb-22310b491fd3091b
 
 running 9 tests
-test tests::bench_db_size        ... bench:       6,695 ns/iter (+/- 492)
-test tests::bench_get_rand       ... bench:     145,389 ns/iter (+/- 41,841)
-test tests::bench_get_seq        ... bench:     140,288 ns/iter (+/- 31,929)
-test tests::bench_get_seq_iter   ... bench:      15,800 ns/iter (+/- 4,328)
-test tests::bench_open_db        ... bench:   1,563,049 ns/iter (+/- 162,092)
-test tests::bench_put_rand_async ... bench:     316,041 ns/iter (+/- 35,024)
-test tests::bench_put_rand_sync  ... bench:     135,399 ns/iter (+/- 35,718)
-test tests::bench_put_seq_async  ... bench:     122,410 ns/iter (+/- 19,453)
-test tests::bench_put_seq_sync   ... bench:     302,608 ns/iter (+/- 65,318)
+test tests::bench_db_size        ... bench:       7,213 ns/iter (+/- 2,936)
+test tests::bench_get_rand       ... bench:     121,786 ns/iter (+/- 10,359)
+test tests::bench_get_seq        ... bench:     119,470 ns/iter (+/- 11,986)
+test tests::bench_get_seq_iter   ... bench:      13,218 ns/iter (+/- 1,894)
+test tests::bench_open_db        ... bench:   1,357,889 ns/iter (+/- 299,411)
+test tests::bench_put_rand_async ... bench:     114,261 ns/iter (+/- 15,022)
+test tests::bench_put_rand_sync  ... bench:     361,174 ns/iter (+/- 267,127)
+test tests::bench_put_seq_async  ... bench:     107,181 ns/iter (+/- 11,718)
+test tests::bench_put_seq_sync   ... bench:     353,104 ns/iter (+/- 297,763)
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 9 measured; 0 filtered out
 
-     Running target/release/deps/lmdb-84a26ec164f48495
+     Running target/release/deps/lmdb-5c56392ee85c8251
 
 running 9 tests
-test tests::bench_db_size        ... bench:      33,051 ns/iter (+/- 4,556)
-test tests::bench_get_rand       ... bench:       8,239 ns/iter (+/- 1,764)
-test tests::bench_get_seq        ... bench:       8,422 ns/iter (+/- 2,781)
-test tests::bench_get_seq_iter   ... bench:       1,501 ns/iter (+/- 476)
-test tests::bench_open_db        ... bench:     204,231 ns/iter (+/- 38,441)
-test tests::bench_put_rand_async ... bench:      86,203 ns/iter (+/- 15,408)
-test tests::bench_put_rand_sync  ... bench:     160,896 ns/iter (+/- 64,842)
-test tests::bench_put_seq_async  ... bench:      86,351 ns/iter (+/- 28,824)
-test tests::bench_put_seq_sync   ... bench:     149,998 ns/iter (+/- 32,966)
+test tests::bench_db_size        ... bench:      32,830 ns/iter (+/- 4,925)
+test tests::bench_get_rand       ... bench:       6,867 ns/iter (+/- 408)
+test tests::bench_get_seq        ... bench:       6,784 ns/iter (+/- 681)
+test tests::bench_get_seq_iter   ... bench:       1,278 ns/iter (+/- 65)
+test tests::bench_open_db        ... bench:     161,971 ns/iter (+/- 13,359)
+test tests::bench_put_rand_async ... bench:      73,461 ns/iter (+/- 5,791)
+test tests::bench_put_rand_sync  ... bench:     122,451 ns/iter (+/- 20,576)
+test tests::bench_put_seq_async  ... bench:      73,005 ns/iter (+/- 2,730)
+test tests::bench_put_seq_sync   ... bench:     125,105 ns/iter (+/- 10,181)
 ```
 
 Note that "db_size" bench is a measure of space, not time.  It reflects the size of storage files into elapsed time via a hack (sleeping for the file size in bytes's number of nanoseconds).  This may or may not be a reasonable way to measure the disk footprint of storage files.
