@@ -17,3 +17,7 @@ criterion = "0.2"
 [[bench]]
 name = "lmdb"
 harness = false
+
+[[bench]]
+name = "leveldb"
+harness = false
