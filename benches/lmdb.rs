@@ -44,7 +44,11 @@ use std::{
 use tempdir::TempDir;
 
 fn get_key(n: u32) -> [u8; 4] {
-    n.to_bytes()
+    let b1: u8 = ((n >> 24) & 0xff) as u8;
+    let b2: u8 = ((n >> 16) & 0xff) as u8;
+    let b3: u8 = ((n >> 8) & 0xff) as u8;
+    let b4: u8 = (n & 0xff) as u8;
+    [b1, b2, b3, b4]
 }
 
 fn get_value(n: u32) -> Vec<u8> {
