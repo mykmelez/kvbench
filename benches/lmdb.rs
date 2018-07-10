@@ -81,7 +81,7 @@ fn bench_open_db(c: &mut Criterion) {
         let _db = env.open_db(None).unwrap();
     }
 
-    c.bench_function("open_db", move |b| b.iter(|| {
+    c.bench_function("lmdb_open_db", move |b| b.iter(|| {
         let env = Environment::new().open(dir.path()).unwrap();
         let _db = env.open_db(None).unwrap();
     }));
@@ -92,7 +92,7 @@ fn bench_put_seq_sync(c: &mut Criterion) {
     let env = Environment::new().open(dir.path()).unwrap();
     let db = env.open_db(None).unwrap();
 
-    c.bench_function_over_inputs("put_seq_sync", move |b, &&num_pairs| b.iter(|| {
+    c.bench_function_over_inputs("lmdb_put_seq_sync", move |b, &&num_pairs| b.iter(|| {
 	    let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
         let mut txn = env.begin_rw_txn().unwrap();
         for (key, value) in &pairs {
@@ -116,7 +116,7 @@ fn bench_put_seq_async(c: &mut Criterion) {
 
     let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
 
-    c.bench_function("put_seq_async", move |b| b.iter(|| {
+    c.bench_function("lmdb_put_seq_async", move |b| b.iter(|| {
         let mut txn = env.begin_rw_txn().unwrap();
         for (key, value) in &pairs {
             txn.put(db, key, value, WriteFlags::empty()).unwrap();
@@ -134,7 +134,7 @@ fn bench_put_rand_sync(c: &mut Criterion) {
     let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
     thread_rng().shuffle(&mut pairs[..]);
 
-    c.bench_function("put_rand_sync", move |b| b.iter(|| {
+    c.bench_function("lmdb_put_rand_sync", move |b| b.iter(|| {
         let mut txn = env.begin_rw_txn().unwrap();
         for (key, value) in &pairs {
             txn.put(db, key, value, WriteFlags::empty()).unwrap();
@@ -158,7 +158,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
     let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
     thread_rng().shuffle(&mut pairs[..]);
 
-    c.bench_function("put_rand_async", move |b| b.iter(|| {
+    c.bench_function("lmdb_put_rand_async", move |b| b.iter(|| {
         let mut txn = env.begin_rw_txn().unwrap();
         for (key, value) in &pairs {
             txn.put(db, key, value, WriteFlags::empty()).unwrap();
@@ -174,7 +174,7 @@ fn bench_get_seq(c: &mut Criterion) {
 
     let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
 
-    c.bench_function("get_seq", move |b| {
+    c.bench_function("lmdb_get_seq", move |b| {
 	    let txn = env.begin_ro_txn().unwrap();
     	b.iter(|| {
 	        let mut i = 0usize;
@@ -193,7 +193,7 @@ fn bench_get_rand(c: &mut Criterion) {
     let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
     thread_rng().shuffle(&mut keys[..]);
 
-    c.bench_function("get_rand", move |b| {
+    c.bench_function("lmdb_get_rand", move |b| {
 	    let txn = env.begin_ro_txn().unwrap();
 	    b.iter(|| {
 	        let mut i = 0usize;
@@ -210,7 +210,7 @@ fn bench_get_seq_iter(c: &mut Criterion) {
     let (_dir, env) = setup_bench_db(num_pairs);
     let db = env.open_db(None).unwrap();
 
-    c.bench_function("get_seq_iter", move |b| {
+    c.bench_function("lmdb_get_seq_iter", move |b| {
 	    let txn = env.begin_ro_txn().unwrap();
 	    b.iter(|| {
 	        let mut cursor = txn.open_ro_cursor(db).unwrap();
@@ -241,7 +241,7 @@ fn bench_db_size(c: &mut Criterion) {
         }
     }
 
-    c.bench_function("db_size", move |b| b.iter(|| {
+    c.bench_function("lmdb_db_size", move |b| b.iter(|| {
         // Convert size on disk to benchmark time by sleeping
         // for the total_size number of nanoseconds.
         thread::sleep(time::Duration::from_nanos(total_size));
