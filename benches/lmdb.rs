@@ -25,22 +25,22 @@ extern crate tempdir;
 extern crate rand;
 extern crate walkdir;
 
-// use self::rand::{
-//     thread_rng,
-//     Rng,
-// };
-// use self::walkdir::WalkDir;
+use self::rand::{
+    thread_rng,
+    Rng,
+};
+use self::walkdir::WalkDir;
 use lmdb::{
-    // Cursor,
+    Cursor,
     Environment,
-    // EnvironmentFlags,
+    EnvironmentFlags,
     Transaction,
     WriteFlags,
 };
-// use std::{
-//     thread,
-//     time,
-// };
+use std::{
+    thread,
+    time,
+};
 use tempdir::TempDir;
 
 fn get_key(n: u32) -> [u8; 4] {
@@ -81,179 +81,184 @@ fn bench_open_db(c: &mut Criterion) {
         let _db = env.open_db(None).unwrap();
     }
 
-    c.bench_function("open DB", move |b| b.iter(|| {
+    c.bench_function("open_db", move |b| b.iter(|| {
         let env = Environment::new().open(dir.path()).unwrap();
         let _db = env.open_db(None).unwrap();
     }));
 }
 
-// #[bench]
-// fn bench_put_seq_sync(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let dir = TempDir::new("test").unwrap();
-//     let env = Environment::new().open(dir.path()).unwrap();
-//     let db = env.open_db(None).unwrap();
+fn bench_put_seq_sync(c: &mut Criterion) {
+    let num_pairs = 100;
+    let dir = TempDir::new("test").unwrap();
+    let env = Environment::new().open(dir.path()).unwrap();
+    let db = env.open_db(None).unwrap();
 
-//     let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+    let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
 
-//     b.iter(|| {
-//         let mut txn = env.begin_rw_txn().unwrap();
-//         for (key, value) in &pairs {
-//             txn.put(db, key, value, WriteFlags::empty()).unwrap();
-//         }
-//         txn.commit().unwrap();
-//     });
-// }
+    c.bench_function("put_seq_sync", move |b| b.iter(|| {
+        let mut txn = env.begin_rw_txn().unwrap();
+        for (key, value) in &pairs {
+            txn.put(db, key, value, WriteFlags::empty()).unwrap();
+        }
+        txn.commit().unwrap();
+    }));
+}
 
-// #[bench]
-// fn bench_put_seq_async(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let dir = TempDir::new("test").unwrap();
-//     // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
-//     // environment flags to make them async (along with using a writeable
-//     // memory map).
-//     let env = Environment::new()
-//         .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
-//         .open(dir.path())
-//         .unwrap();
-//     let db = env.open_db(None).unwrap();
+fn bench_put_seq_async(c: &mut Criterion) {
+    let num_pairs = 100;
+    let dir = TempDir::new("test").unwrap();
+    // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
+    // environment flags to make them async (along with using a writeable
+    // memory map).
+    let env = Environment::new()
+        .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
+        .open(dir.path())
+        .unwrap();
+    let db = env.open_db(None).unwrap();
 
-//     let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+    let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
 
-//     b.iter(|| {
-//         let mut txn = env.begin_rw_txn().unwrap();
-//         for (key, value) in &pairs {
-//             txn.put(db, key, value, WriteFlags::empty()).unwrap();
-//         }
-//         txn.commit().unwrap();
-//     });
-// }
+    c.bench_function("put_seq_async", move |b| b.iter(|| {
+        let mut txn = env.begin_rw_txn().unwrap();
+        for (key, value) in &pairs {
+            txn.put(db, key, value, WriteFlags::empty()).unwrap();
+        }
+        txn.commit().unwrap();
+    }));
+}
 
-// #[bench]
-// fn bench_put_rand_sync(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let dir = TempDir::new("test").unwrap();
-//     let env = Environment::new().open(dir.path()).unwrap();
-//     let db = env.open_db(None).unwrap();
+fn bench_put_rand_sync(c: &mut Criterion) {
+    let num_pairs = 100;
+    let dir = TempDir::new("test").unwrap();
+    let env = Environment::new().open(dir.path()).unwrap();
+    let db = env.open_db(None).unwrap();
 
-//     let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-//     thread_rng().shuffle(&mut pairs[..]);
+    let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+    thread_rng().shuffle(&mut pairs[..]);
 
-//     b.iter(|| {
-//         let mut txn = env.begin_rw_txn().unwrap();
-//         for (key, value) in &pairs {
-//             txn.put(db, key, value, WriteFlags::empty()).unwrap();
-//         }
-//         txn.commit().unwrap();
-//     });
-// }
+    c.bench_function("put_rand_sync", move |b| b.iter(|| {
+        let mut txn = env.begin_rw_txn().unwrap();
+        for (key, value) in &pairs {
+            txn.put(db, key, value, WriteFlags::empty()).unwrap();
+        }
+        txn.commit().unwrap();
+    }));
+}
 
-// #[bench]
-// fn bench_put_rand_async(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let dir = TempDir::new("test").unwrap();
-//     // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
-//     // environment flags to make them async (along with using a writeable
-//     // memory map).
-//     let env = Environment::new()
-//         .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
-//         .open(dir.path())
-//         .unwrap();
-//     let db = env.open_db(None).unwrap();
+fn bench_put_rand_async(c: &mut Criterion) {
+    let num_pairs = 100;
+    let dir = TempDir::new("test").unwrap();
+    // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
+    // environment flags to make them async (along with using a writeable
+    // memory map).
+    let env = Environment::new()
+        .set_flags(EnvironmentFlags::MAP_ASYNC | EnvironmentFlags::WRITE_MAP)
+        .open(dir.path())
+        .unwrap();
+    let db = env.open_db(None).unwrap();
 
-//     let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
-//     thread_rng().shuffle(&mut pairs[..]);
+    let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n)).collect();
+    thread_rng().shuffle(&mut pairs[..]);
 
-//     b.iter(|| {
-//         let mut txn = env.begin_rw_txn().unwrap();
-//         for (key, value) in &pairs {
-//             txn.put(db, key, value, WriteFlags::empty()).unwrap();
-//         }
-//         txn.commit().unwrap();
-//     });
-// }
+    c.bench_function("put_rand_async", move |b| b.iter(|| {
+        let mut txn = env.begin_rw_txn().unwrap();
+        for (key, value) in &pairs {
+            txn.put(db, key, value, WriteFlags::empty()).unwrap();
+        }
+        txn.commit().unwrap();
+    }));
+}
 
-// #[bench]
-// fn bench_get_seq(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let (_dir, env) = setup_bench_db(num_pairs);
-//     let db = env.open_db(None).unwrap();
-//     let txn = env.begin_ro_txn().unwrap();
+fn bench_get_seq(c: &mut Criterion) {
+    let num_pairs = 100;
+    let (_dir, env) = setup_bench_db(num_pairs);
+    let db = env.open_db(None).unwrap();
 
-//     let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
+    let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
 
-//     b.iter(|| {
-//         let mut i = 0usize;
-//         for key in &keys {
-//             i = i + txn.get(db, key).unwrap().len();
-//         }
-//         black_box(i);
-//     });
-// }
+    c.bench_function("get_seq", move |b| {
+	    let txn = env.begin_ro_txn().unwrap();
+    	b.iter(|| {
+	        let mut i = 0usize;
+	        for key in &keys {
+	            i = i + txn.get(db, key).unwrap().len();
+	        }
+	    });
+    });
+}
 
-// #[bench]
-// fn bench_get_rand(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let (_dir, env) = setup_bench_db(num_pairs);
-//     let db = env.open_db(None).unwrap();
-//     let txn = env.begin_ro_txn().unwrap();
+fn bench_get_rand(c: &mut Criterion) {
+    let num_pairs = 100;
+    let (_dir, env) = setup_bench_db(num_pairs);
+    let db = env.open_db(None).unwrap();
 
-//     let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
-//     thread_rng().shuffle(&mut keys[..]);
+    let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
+    thread_rng().shuffle(&mut keys[..]);
 
-//     b.iter(|| {
-//         let mut i = 0usize;
-//         for key in &keys {
-//             i = i + txn.get(db, key).unwrap().len();
-//         }
-//         black_box(i);
-//     });
-// }
+    c.bench_function("get_rand", move |b| {
+	    let txn = env.begin_ro_txn().unwrap();
+	    b.iter(|| {
+	        let mut i = 0usize;
+	        for key in &keys {
+	            i = i + txn.get(db, key).unwrap().len();
+	        }
+	    });
+    });
+}
 
-// /// Benchmark of iterator sequential read performance.
-// #[bench]
-// fn bench_get_seq_iter(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let (_dir, env) = setup_bench_db(num_pairs);
-//     let db = env.open_db(None).unwrap();
-//     let txn = env.begin_ro_txn().unwrap();
+/// Benchmark of iterator sequential read performance.
+fn bench_get_seq_iter(c: &mut Criterion) {
+    let num_pairs = 100;
+    let (_dir, env) = setup_bench_db(num_pairs);
+    let db = env.open_db(None).unwrap();
 
-//     b.iter(|| {
-//         let mut cursor = txn.open_ro_cursor(db).unwrap();
-//         let mut i = 0;
-//         let mut count = 0u32;
+    c.bench_function("get_seq_iter", move |b| {
+	    let txn = env.begin_ro_txn().unwrap();
+	    b.iter(|| {
+	        let mut cursor = txn.open_ro_cursor(db).unwrap();
+	        let mut i = 0;
+	        let mut count = 0u32;
 
-//         for (key, data) in cursor.iter() {
-//             i = i + key.len() + data.len();
-//             count = count + 1;
-//         }
+	        for (key, data) in cursor.iter() {
+	            i = i + key.len() + data.len();
+	            count = count + 1;
+	        }
 
-//         black_box(i);
-//         assert_eq!(count, num_pairs);
-//     });
-// }
+	        assert_eq!(count, num_pairs);
+	    });
+    });
+}
 
-// // This measures space on disk, not time, reflecting the space taken
-// // by a database on disk into the time it takes the benchmark to complete.
-// #[bench]
-// fn bench_db_size(b: &mut Bencher) {
-//     let num_pairs = 100;
-//     let (dir, _env) = setup_bench_db(num_pairs);
-//     let mut total_size = 0;
+// This measures space on disk, not time, reflecting the space taken
+// by a database on disk into the time it takes the benchmark to complete.
+fn bench_db_size(c: &mut Criterion) {
+    let num_pairs = 100;
+    let (dir, _env) = setup_bench_db(num_pairs);
+    let mut total_size = 0;
 
-//     for entry in WalkDir::new(dir.path()) {
-//         let metadata = entry.unwrap().metadata().unwrap();
-//         if metadata.is_file() {
-//             total_size += metadata.len();
-//         }
-//     }
+    for entry in WalkDir::new(dir.path()) {
+        let metadata = entry.unwrap().metadata().unwrap();
+        if metadata.is_file() {
+            total_size += metadata.len();
+        }
+    }
 
-//     b.iter(|| {
-//         // Convert size on disk to benchmark time by sleeping
-//         // for the total_size number of nanoseconds.
-//         thread::sleep(time::Duration::from_nanos(total_size));
-//     });
-// }
+    c.bench_function("db_size", move |b| b.iter(|| {
+        // Convert size on disk to benchmark time by sleeping
+        // for the total_size number of nanoseconds.
+        thread::sleep(time::Duration::from_nanos(total_size));
+    }));
+}
 
-criterion_group!(benches, bench_open_db);
+criterion_group!(benches,
+	bench_open_db,
+	bench_put_seq_sync,
+	bench_put_seq_async,
+	bench_put_rand_sync,
+	bench_put_rand_async,
+	bench_get_seq,
+	bench_get_rand,
+	bench_get_seq_iter,
+	bench_db_size,
+);
 criterion_main!(benches);
