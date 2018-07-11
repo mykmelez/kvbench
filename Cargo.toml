@@ -1,16 +1,16 @@
 [package]
-name = "kv-test"
+name = "kv-bench"
 version = "0.1.0"
 authors = ["Myk Melez <myk@mykzilla.org>"]
 
 [dependencies]
-leveldb="0"
-lmdb="0"
-tempdir="0"
-db-key = "0.0.5"
+leveldb = "0.8"
+lmdb = "0.8"
+tempdir = "0.3"
+db-key = "0.0"
 
 [dev-dependencies]
-rand="0"
+rand = "0.5"
 walkdir = "2"
 criterion = "0.2"
 
