@@ -4,15 +4,18 @@ version = "0.1.0"
 authors = ["Myk Melez <myk@mykzilla.org>"]
 
 [dependencies]
+lazy_static = "1"
 leveldb = "0.8"
 lmdb = "0.8"
 tempdir = "0.3"
 db-key = "0.0"
+rand = "0.5"
 
 [dev-dependencies]
-rand = "0.5"
-walkdir = "2"
 criterion = "0.2"
+libc = "0.2"
+page_size = "0.4"
+walkdir = "2"
 
 [[bench]]
 name = "lmdb"
