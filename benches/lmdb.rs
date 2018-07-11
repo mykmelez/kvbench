@@ -24,8 +24,8 @@ extern crate lazy_static;
 extern crate libc;
 extern crate lmdb;
 extern crate page_size;
-extern crate tempdir;
 extern crate rand;
+extern crate tempdir;
 extern crate walkdir;
 
 use criterion::Criterion;
@@ -43,8 +43,8 @@ use lmdb::{
 
 use rand::{
     random,
-    Rng,
     thread_rng,
+    Rng,
 };
 
 use std::{
