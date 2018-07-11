@@ -58,14 +58,14 @@ use std::{
 
 use tempdir::TempDir;
 
-const NUM_PAIRS: [u32; 3] = [1, 100, 1000];
-const NUM_BYTES: [usize; 3] = [1, 100, 1000];
+const PAIR_COUNTS: [u32; 3] = [1, 100, 1000];
+const VALUE_SIZES: [usize; 3] = [1, 100, 1000];
 
 lazy_static! {
     // A collection of tuples (num_pairs, num_bytes) representing every
     // combination of numbers of pairs and bytes, which we'll use to benchmark
     // storage engine performance across various shapes of data.
-    static ref COMBOS: Vec<(u32, usize)> = NUM_PAIRS.iter().flat_map(|&m| NUM_BYTES.iter().map(move |&n| (m, n))).collect();
+    static ref PARAMS: Vec<(u32, usize)> = PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| (m, n))).collect();
 }
 
 pub fn get_key(n: u32) -> i32 {
@@ -139,7 +139,7 @@ fn bench_put_seq_sync(c: &mut Criterion) {
                 db.write(write_opts, batch).unwrap();
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -163,7 +163,7 @@ fn bench_put_seq_async(c: &mut Criterion) {
                 db.write(write_opts, batch).unwrap();
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -191,7 +191,7 @@ fn bench_put_rand_sync(c: &mut Criterion) {
                 db.write(write_opts, batch).unwrap();
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -216,7 +216,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
                 db.write(write_opts, batch).unwrap();
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -238,7 +238,7 @@ fn bench_get_seq(c: &mut Criterion) {
                 }
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -261,7 +261,7 @@ fn bench_get_rand(c: &mut Criterion) {
                 }
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -287,7 +287,7 @@ fn bench_get_seq_iter(c: &mut Criterion) {
                 assert_eq!(count, t.0);
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
@@ -313,7 +313,7 @@ fn bench_db_size(c: &mut Criterion) {
                 thread::sleep(time::Duration::from_nanos(total_size));
             })
         },
-        COMBOS.iter(),
+        PARAMS.iter(),
     );
 }
 
