@@ -43,6 +43,8 @@ use std::{
 };
 use tempdir::TempDir;
 
+const NUM_PAIRS: [u32; 3] = [1, 128, 1024];
+
 fn get_key(n: u32) -> [u8; 4] {
     let b1: u8 = ((n >> 24) & 0xff) as u8;
     let b2: u8 = ((n >> 16) & 0xff) as u8;
@@ -108,9 +110,9 @@ fn bench_put_seq_sync(c: &mut Criterion) {
                     txn.put(db, key, value, WriteFlags::empty()).unwrap();
                 }
                 txn.commit().unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
@@ -135,9 +137,9 @@ fn bench_put_seq_async(c: &mut Criterion) {
                     txn.put(db, key, value, WriteFlags::empty()).unwrap();
                 }
                 txn.commit().unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
@@ -157,9 +159,9 @@ fn bench_put_rand_sync(c: &mut Criterion) {
                     txn.put(db, key, value, WriteFlags::empty()).unwrap();
                 }
                 txn.commit().unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
@@ -185,93 +187,105 @@ fn bench_put_rand_async(c: &mut Criterion) {
                     txn.put(db, key, value, WriteFlags::empty()).unwrap();
                 }
                 txn.commit().unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
 fn bench_get_seq(c: &mut Criterion) {
-    let num_pairs = 100;
-    let (_dir, env) = setup_bench_db(num_pairs);
-    let db = env.open_db(None).unwrap();
-
-    let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
-
-    c.bench_function("lmdb_get_seq", move |b| {
-        let txn = env.begin_ro_txn().unwrap();
-        b.iter(|| {
-            let mut i = 0usize;
-            for key in &keys {
-                i = i + txn.get(db, key).unwrap().len();
-            }
-        });
-    });
+    c.bench_function_over_inputs(
+        "lmdb_get_seq",
+        move |b, &&num_pairs| {
+            let (_dir, env) = setup_bench_db(num_pairs);
+            let db = env.open_db(None).unwrap();
+            let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
+            b.iter(|| {
+                let txn = env.begin_ro_txn().unwrap();
+                let mut i = 0usize;
+                for key in &keys {
+                    i = i + txn.get(db, key).unwrap().len();
+                }
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 fn bench_get_rand(c: &mut Criterion) {
-    let num_pairs = 100;
-    let (_dir, env) = setup_bench_db(num_pairs);
-    let db = env.open_db(None).unwrap();
+    c.bench_function_over_inputs(
+        "lmdb_get_rand",
+        move |b, &&num_pairs| {
+            let (_dir, env) = setup_bench_db(num_pairs);
+            let db = env.open_db(None).unwrap();
 
-    let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
-    thread_rng().shuffle(&mut keys[..]);
+            let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
+            thread_rng().shuffle(&mut keys[..]);
 
-    c.bench_function("lmdb_get_rand", move |b| {
-        let txn = env.begin_ro_txn().unwrap();
-        b.iter(|| {
-            let mut i = 0usize;
-            for key in &keys {
-                i = i + txn.get(db, key).unwrap().len();
-            }
-        });
-    });
+            let txn = env.begin_ro_txn().unwrap();
+            b.iter(|| {
+                let mut i = 0usize;
+                for key in &keys {
+                    i = i + txn.get(db, key).unwrap().len();
+                }
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 /// Benchmark of iterator sequential read performance.
 fn bench_get_seq_iter(c: &mut Criterion) {
-    let num_pairs = 100;
-    let (_dir, env) = setup_bench_db(num_pairs);
-    let db = env.open_db(None).unwrap();
+    c.bench_function_over_inputs(
+        "lmdb_get_seq_iter",
+        move |b, &&num_pairs| {
+            let (_dir, env) = setup_bench_db(num_pairs);
+            let db = env.open_db(None).unwrap();
 
-    c.bench_function("lmdb_get_seq_iter", move |b| {
-        let txn = env.begin_ro_txn().unwrap();
-        b.iter(|| {
-            let mut cursor = txn.open_ro_cursor(db).unwrap();
-            let mut i = 0;
-            let mut count = 0u32;
+            let txn = env.begin_ro_txn().unwrap();
+            b.iter(|| {
+                let mut cursor = txn.open_ro_cursor(db).unwrap();
+                let mut i = 0;
+                let mut count = 0u32;
 
-            for (key, data) in cursor.iter() {
-                i = i + key.len() + data.len();
-                count = count + 1;
-            }
+                for (key, data) in cursor.iter() {
+                    i = i + key.len() + data.len();
+                    count = count + 1;
+                }
 
-            assert_eq!(count, num_pairs);
-        });
-    });
+                assert_eq!(count, num_pairs);
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 // This measures space on disk, not time, reflecting the space taken
 // by a database on disk into the time it takes the benchmark to complete.
+// It is non-obvious to me that this is an accurate way to measure space,
+// much less an optimal one.
 fn bench_db_size(c: &mut Criterion) {
-    let num_pairs = 100;
-    let (dir, _env) = setup_bench_db(num_pairs);
-    let mut total_size = 0;
+    c.bench_function_over_inputs(
+        "lmdb_db_size",
+        move |b, &&num_pairs| {
+            let (dir, _env) = setup_bench_db(num_pairs);
+            let mut total_size = 0;
 
-    for entry in WalkDir::new(dir.path()) {
-        let metadata = entry.unwrap().metadata().unwrap();
-        if metadata.is_file() {
-            total_size += metadata.len();
-        }
-    }
+            for entry in WalkDir::new(dir.path()) {
+                let metadata = entry.unwrap().metadata().unwrap();
+                if metadata.is_file() {
+                    total_size += metadata.len();
+                }
+            }
 
-    c.bench_function("lmdb_db_size", move |b| {
-        b.iter(|| {
-            // Convert size on disk to benchmark time by sleeping
-            // for the total_size number of nanoseconds.
-            thread::sleep(time::Duration::from_nanos(total_size));
-        })
-    });
+            b.iter(|| {
+                // Convert size on disk to benchmark time by sleeping
+                // for the total_size number of nanoseconds.
+                thread::sleep(time::Duration::from_nanos(total_size));
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 criterion_group!(

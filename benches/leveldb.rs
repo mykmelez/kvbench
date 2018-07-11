@@ -48,6 +48,8 @@ use std::{
 };
 use tempdir::TempDir;
 
+const NUM_PAIRS: [u32; 3] = [1, 128, 1024];
+
 pub fn get_key(n: u32) -> i32 {
     n as i32
 }
@@ -118,9 +120,9 @@ fn bench_put_seq_sync(c: &mut Criterion) {
                 // flag to true to make them sync.
                 write_opts.sync = true;
                 db.write(write_opts, batch).unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
@@ -143,9 +145,9 @@ fn bench_put_seq_async(c: &mut Criterion) {
                 }
                 let write_opts = WriteOptions::new();
                 db.write(write_opts, batch).unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
@@ -172,9 +174,9 @@ fn bench_put_rand_sync(c: &mut Criterion) {
                 // flag to true to make them sync.
                 write_opts.sync = true;
                 db.write(write_opts, batch).unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
@@ -198,103 +200,115 @@ fn bench_put_rand_async(c: &mut Criterion) {
                 }
                 let write_opts = WriteOptions::new();
                 db.write(write_opts, batch).unwrap();
-            });
+            })
         },
-        &[100],
+        &NUM_PAIRS,
     );
 }
 
 fn bench_get_seq(c: &mut Criterion) {
-    let num_pairs = 100;
-    let dir = setup_bench_db(num_pairs);
-    let path = dir.path();
+    c.bench_function_over_inputs(
+        "leveldb_get_seq",
+        move |b, &&num_pairs| {
+            let dir = setup_bench_db(num_pairs);
+            let path = dir.path();
 
-    let options = Options::new();
-    let database: Database<i32> = Database::open(path, options).unwrap();
+            let options = Options::new();
+            let database: Database<i32> = Database::open(path, options).unwrap();
 
-    let keys: Vec<i32> = (0..num_pairs as i32).collect();
+            let keys: Vec<i32> = (0..num_pairs as i32).collect();
 
-    c.bench_function("leveldb_get_seq", move |b| {
-        b.iter(|| {
-            let mut i = 0usize;
-            for key in &keys {
-                let read_opts = ReadOptions::new();
-                i = i + database.get(read_opts, key).unwrap().unwrap().len();
-            }
-        })
-    });
+            b.iter(|| {
+                let mut i = 0usize;
+                for key in &keys {
+                    let read_opts = ReadOptions::new();
+                    i = i + database.get(read_opts, key).unwrap().unwrap().len();
+                }
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 fn bench_get_rand(c: &mut Criterion) {
-    let num_pairs = 100;
-    let dir = setup_bench_db(num_pairs);
-    let path = dir.path();
+    c.bench_function_over_inputs(
+        "leveldb_get_rand",
+        move |b, &&num_pairs| {
+            let dir = setup_bench_db(num_pairs);
+            let path = dir.path();
 
-    let options = Options::new();
-    let database: Database<i32> = Database::open(path, options).unwrap();
+            let options = Options::new();
+            let database: Database<i32> = Database::open(path, options).unwrap();
 
-    let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
-    thread_rng().shuffle(&mut keys[..]);
+            let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
+            thread_rng().shuffle(&mut keys[..]);
 
-    c.bench_function("leveldb_get_rand", move |b| {
-        b.iter(|| {
-            let mut i = 0usize;
-            for key in &keys {
-                let read_opts = ReadOptions::new();
-                i = i + database.get(read_opts, key).unwrap().unwrap().len();
-            }
-        })
-    });
+            b.iter(|| {
+                let mut i = 0usize;
+                for key in &keys {
+                    let read_opts = ReadOptions::new();
+                    i = i + database.get(read_opts, key).unwrap().unwrap().len();
+                }
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 fn bench_get_seq_iter(c: &mut Criterion) {
-    let num_pairs = 100;
-    let dir = setup_bench_db(num_pairs);
-    let path = dir.path();
+    c.bench_function_over_inputs(
+        "leveldb_get_seq_iter",
+        move |b, &&num_pairs| {
+            let dir = setup_bench_db(num_pairs);
+            let path = dir.path();
 
-    let options = Options::new();
-    let database: Database<i32> = Database::open(path, options).unwrap();
+            let options = Options::new();
+            let database: Database<i32> = Database::open(path, options).unwrap();
 
-    let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
-    thread_rng().shuffle(&mut keys[..]);
+            let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
+            thread_rng().shuffle(&mut keys[..]);
 
-    c.bench_function("leveldb_get_seq_iter", move |b| {
-        b.iter(|| {
-            let mut i = 0;
-            let mut count = 0u32;
-            let read_opts = ReadOptions::new();
+            b.iter(|| {
+                let mut i = 0;
+                let mut count = 0u32;
+                let read_opts = ReadOptions::new();
 
-            for (key, data) in database.iter(read_opts) {
-                i = i + key as usize + data.len();
-                count = count + 1;
-            }
+                for (key, data) in database.iter(read_opts) {
+                    i = i + key as usize + data.len();
+                    count = count + 1;
+                }
 
-            assert_eq!(count, num_pairs);
-        })
-    });
+                assert_eq!(count, num_pairs);
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 // This measures space on disk, not time, reflecting the space taken
 // by a database on disk into the time it takes the benchmark to complete.
 fn bench_db_size(c: &mut Criterion) {
-    let num_pairs = 100;
-    let dir = setup_bench_db(num_pairs);
-    let mut total_size = 0;
+    c.bench_function_over_inputs(
+        "leveldb_db_size",
+        move |b, &&num_pairs| {
+            let dir = setup_bench_db(num_pairs);
+            let mut total_size = 0;
 
-    for entry in WalkDir::new(dir.path()) {
-        let metadata = entry.unwrap().metadata().unwrap();
-        if metadata.is_file() {
-            total_size += metadata.len();
-        }
-    }
+            for entry in WalkDir::new(dir.path()) {
+                let metadata = entry.unwrap().metadata().unwrap();
+                if metadata.is_file() {
+                    total_size += metadata.len();
+                }
+            }
 
-    c.bench_function("leveldb_db_size", move |b| {
-        b.iter(|| {
-            // Convert size on disk to benchmark time by sleeping
-            // for the total_size number of nanoseconds.
-            thread::sleep(time::Duration::from_nanos(total_size));
-        })
-    });
+            b.iter(|| {
+                // Convert size on disk to benchmark time by sleeping
+                // for the total_size number of nanoseconds.
+                thread::sleep(time::Duration::from_nanos(total_size));
+            })
+        },
+        &NUM_PAIRS,
+    );
 }
 
 criterion_group!(
