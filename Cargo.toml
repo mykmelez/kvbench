@@ -12,3 +12,12 @@ db-key = "0.0.5"
 [dev-dependencies]
 rand="0"
 walkdir = "2"
+criterion = "0.2"
+
+[[bench]]
+name = "lmdb"
+harness = false
+
+[[bench]]
+name = "leveldb"
+harness = false

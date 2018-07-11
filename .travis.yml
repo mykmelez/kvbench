@@ -1,6 +1,8 @@
 language: rust
 cache: cargo
 rust:
+  - stable
+  - beta
   - nightly
 before_script:
   - rustup toolchain install nightly-2018-07-08
@@ -8,6 +10,6 @@ before_script:
   - command -v rustfmt || cargo install --force rustfmt-nightly
 script:
   - cargo +nightly-2018-07-08 fmt --all -- --check
-  - cargo bench
   - cargo run --bin leveldb
   - cargo run --bin lmdb
+  - cargo bench -- --test
