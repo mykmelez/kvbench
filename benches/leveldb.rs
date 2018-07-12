@@ -58,6 +58,19 @@ use std::{
 
 use tempdir::TempDir;
 
+// We parameterize benchmarks across both the number of KV pairs we write to
+// (or read from) a datastore and the sizes of the values we write (or read).
+//
+// It might make sense to also parameterize across the sizes of the keys,
+// for which we'd need to define a struct that implements the db_key::Key trait,
+// since the leveldb crate delegates to the db_key crate to define key types,
+// and the only implementation of Key in the db_key crate itself is for u32,
+// which always has the same size: four bytes.
+//
+// (The lmdb crate defines key types as any type that implements AsRef<[u8]>,
+// so we don't need to do anything special to parameterize across key sizes
+// for that storage engine.)
+//
 const PAIR_COUNTS: [u32; 3] = [1, 100, 1000];
 const VALUE_SIZES: [usize; 3] = [1, 100, 1000];
 
