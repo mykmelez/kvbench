@@ -128,15 +128,21 @@ fn bench_put_seq_sync(c: &mut Criterion) {
             let pairs: Vec<(i32, Vec<u8>)> = (0..t.0).map(|n| get_pair(n, t.1)).collect();
 
             b.iter(|| {
-                let batch = &mut Writebatch::new();
-                for (key, value) in &pairs {
-                    batch.put(*key, value);
-                }
                 let mut write_opts = WriteOptions::new();
-                // LevelDB writes are async by default.  Set the WriteOptions::sync
-                // flag to true to make them sync.
+                // LevelDB writes are async by default.  Set WriteOptions::sync
+                // to true to make them sync.
                 write_opts.sync = true;
-                db.write(write_opts, batch).unwrap();
+                if t.0 == 1 {
+                    // Optimize the case where we're writing only one value
+                    // by writing it directly rather than creating a batch.
+                    db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
+                } else {
+                    let batch = &mut Writebatch::new();
+                    for (key, value) in &pairs {
+                        batch.put(*key, value);
+                    }
+                    db.write(write_opts, batch).unwrap();
+                }
             })
         },
         PARAMS.iter(),
@@ -155,12 +161,18 @@ fn bench_put_seq_async(c: &mut Criterion) {
             let pairs: Vec<(i32, Vec<u8>)> = (0..t.0).map(|n| get_pair(n, t.1)).collect();
 
             b.iter(|| {
-                let batch = &mut Writebatch::new();
-                for (key, value) in &pairs {
-                    batch.put(*key, value);
-                }
                 let write_opts = WriteOptions::new();
-                db.write(write_opts, batch).unwrap();
+                if t.0 == 1 {
+                    // Optimize the case where we're writing only one value
+                    // by writing it directly rather than creating a batch.
+                    db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
+                } else {
+                    let batch = &mut Writebatch::new();
+                    for (key, value) in &pairs {
+                        batch.put(*key, value);
+                    }
+                    db.write(write_opts, batch).unwrap();
+                }
             })
         },
         PARAMS.iter(),
@@ -180,15 +192,21 @@ fn bench_put_rand_sync(c: &mut Criterion) {
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| {
-                let batch = &mut Writebatch::new();
-                for (key, value) in &pairs {
-                    batch.put(*key, value);
-                }
                 let mut write_opts = WriteOptions::new();
-                // LevelDB writes are async by default.  Set the WriteOptions::sync
-                // flag to true to make them sync.
+                // LevelDB writes are async by default.  Set WriteOptions::sync
+                // to true to make them sync.
                 write_opts.sync = true;
-                db.write(write_opts, batch).unwrap();
+                if t.0 == 1 {
+                    // Optimize the case where we're writing only one value
+                    // by writing it directly rather than creating a batch.
+                    db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
+                } else {
+                    let batch = &mut Writebatch::new();
+                    for (key, value) in &pairs {
+                        batch.put(*key, value);
+                    }
+                    db.write(write_opts, batch).unwrap();
+                }
             })
         },
         PARAMS.iter(),
@@ -208,12 +226,18 @@ fn bench_put_rand_async(c: &mut Criterion) {
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| {
-                let batch = &mut Writebatch::new();
-                for (key, value) in &pairs {
-                    batch.put(*key, value);
-                }
                 let write_opts = WriteOptions::new();
-                db.write(write_opts, batch).unwrap();
+                if t.0 == 1 {
+                    // Optimize the case where we're writing only one value
+                    // by writing it directly rather than creating a batch.
+                    db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
+                } else {
+                    let batch = &mut Writebatch::new();
+                    for (key, value) in &pairs {
+                        batch.put(*key, value);
+                    }
+                    db.write(write_opts, batch).unwrap();
+                }
             })
         },
         PARAMS.iter(),
