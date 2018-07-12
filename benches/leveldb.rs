@@ -120,19 +120,20 @@ fn bench_put_seq_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_seq_sync",
         move |b, &&t| {
+            let (num_pairs, num_bytes) = t;
             let dir = TempDir::new("bench_put_seq").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let pairs: Vec<(i32, Vec<u8>)> = (0..t.0).map(|n| get_pair(n, t.1)).collect();
+            let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
 
             b.iter(|| {
                 let mut write_opts = WriteOptions::new();
                 // LevelDB writes are async by default.  Set WriteOptions::sync
                 // to true to make them sync.
                 write_opts.sync = true;
-                if t.0 == 1 {
+                if num_pairs == 1 {
                     // Optimize the case where we're writing only one value
                     // by writing it directly rather than creating a batch.
                     db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
@@ -153,16 +154,17 @@ fn bench_put_seq_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_seq_async",
         move |b, &&t| {
+            let (num_pairs, num_bytes) = t;
             let dir = TempDir::new("bench_put_seq").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let pairs: Vec<(i32, Vec<u8>)> = (0..t.0).map(|n| get_pair(n, t.1)).collect();
+            let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
 
             b.iter(|| {
                 let write_opts = WriteOptions::new();
-                if t.0 == 1 {
+                if num_pairs == 1 {
                     // Optimize the case where we're writing only one value
                     // by writing it directly rather than creating a batch.
                     db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
@@ -183,12 +185,13 @@ fn bench_put_rand_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_rand_sync",
         move |b, &&t| {
+            let (num_pairs, num_bytes) = t;
             let dir = TempDir::new("bench_put_rand_sync").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let mut pairs: Vec<(i32, Vec<u8>)> = (0..t.0).map(|n| get_pair(n, t.1)).collect();
+            let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| {
@@ -196,7 +199,7 @@ fn bench_put_rand_sync(c: &mut Criterion) {
                 // LevelDB writes are async by default.  Set WriteOptions::sync
                 // to true to make them sync.
                 write_opts.sync = true;
-                if t.0 == 1 {
+                if num_pairs == 1 {
                     // Optimize the case where we're writing only one value
                     // by writing it directly rather than creating a batch.
                     db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
@@ -217,17 +220,18 @@ fn bench_put_rand_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_rand_async",
         move |b, &&t| {
+            let (num_pairs, num_bytes) = t;
             let dir = TempDir::new("bench_put_rand_async").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let mut pairs: Vec<(i32, Vec<u8>)> = (0..t.0).map(|n| get_pair(n, t.1)).collect();
+            let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| {
                 let write_opts = WriteOptions::new();
-                if t.0 == 1 {
+                if num_pairs == 1 {
                     // Optimize the case where we're writing only one value
                     // by writing it directly rather than creating a batch.
                     db.put(write_opts, *&pairs[0].0, &pairs[0].1).unwrap();
@@ -248,11 +252,12 @@ fn bench_get_seq(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq",
         move |b, &&t| {
-            let dir = setup_bench_db(t.0, t.1);
+            let (num_pairs, num_bytes) = t;
+            let dir = setup_bench_db(num_pairs, num_bytes);
             let path = dir.path();
             let options = Options::new();
             let database: Database<i32> = Database::open(path, options).unwrap();
-            let keys: Vec<i32> = (0..t.0 as i32).collect();
+            let keys: Vec<i32> = (0..num_pairs as i32).collect();
 
             b.iter(|| {
                 let mut i = 0usize;
@@ -270,11 +275,12 @@ fn bench_get_rand(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_rand",
         move |b, &&t| {
-            let dir = setup_bench_db(t.0, t.1);
+            let (num_pairs, num_bytes) = t;
+            let dir = setup_bench_db(num_pairs, num_bytes);
             let path = dir.path();
             let options = Options::new();
             let database: Database<i32> = Database::open(path, options).unwrap();
-            let mut keys: Vec<i32> = (0..t.0 as i32).collect();
+            let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
             thread_rng().shuffle(&mut keys[..]);
 
             b.iter(|| {
@@ -293,11 +299,12 @@ fn bench_get_seq_iter(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq_iter",
         move |b, &&t| {
-            let dir = setup_bench_db(t.0, t.1);
+            let (num_pairs, num_bytes) = t;
+            let dir = setup_bench_db(num_pairs, num_bytes);
             let path = dir.path();
             let options = Options::new();
             let database: Database<i32> = Database::open(path, options).unwrap();
-            let mut keys: Vec<i32> = (0..t.0 as i32).collect();
+            let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
             thread_rng().shuffle(&mut keys[..]);
 
             b.iter(|| {
@@ -308,7 +315,7 @@ fn bench_get_seq_iter(c: &mut Criterion) {
                     i = i + key as usize + data.len();
                     count = count + 1;
                 }
-                assert_eq!(count, t.0);
+                assert_eq!(count, num_pairs);
             })
         },
         PARAMS.iter(),
@@ -321,7 +328,8 @@ fn bench_db_size(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_db_size",
         move |b, &&t| {
-            let dir = setup_bench_db(t.0, t.1);
+            let (num_pairs, num_bytes) = t;
+            let dir = setup_bench_db(num_pairs, num_bytes);
             let mut total_size = 0;
 
             for entry in WalkDir::new(dir.path()) {
