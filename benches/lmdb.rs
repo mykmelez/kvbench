@@ -72,9 +72,9 @@ const PAIR_COUNTS: [u32; 3] = [1, 100, 1000];
 const VALUE_SIZES: [usize; 3] = [1, 100, 1000];
 
 lazy_static! {
-    // A collection of tuples (num_pairs, num_bytes) representing every
-    // combination of numbers of pairs and bytes, which we'll use to benchmark
-    // storage engine performance across various shapes of data.
+    // A collection of tuples (num_pairs, size_values) representing every
+    // combination of numbers of pairs and sizes of values, which we use
+    // to benchmark storage engine performance across various shapes of data.
     static ref PARAMS: Vec<(u32, usize)> = PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| (m, n))).collect();
 }
 
@@ -86,12 +86,12 @@ fn get_key(n: u32) -> [u8; 4] {
     [b1, b2, b3, b4]
 }
 
-fn get_value(num_bytes: usize) -> Vec<u8> {
-    (0..num_bytes).map(|_| random()).collect()
+fn get_value(size_values: usize) -> Vec<u8> {
+    (0..size_values).map(|_| random()).collect()
 }
 
-fn get_pair(num_pairs: u32, num_bytes: usize) -> ([u8; 4], Vec<u8>) {
-    (get_key(num_pairs), get_value(num_bytes))
+fn get_pair(num_pairs: u32, size_values: usize) -> ([u8; 4], Vec<u8>) {
+    (get_key(num_pairs), get_value(size_values))
 }
 
 fn get_env() -> EnvironmentBuilder {
@@ -101,7 +101,7 @@ fn get_env() -> EnvironmentBuilder {
     *Environment::new().set_map_size(MAP_SIZE)
 }
 
-fn setup_bench_db(num_pairs: u32, num_bytes: usize) -> (TempDir, Environment) {
+fn setup_bench_db(num_pairs: u32, size_values: usize) -> (TempDir, Environment) {
     let dir = TempDir::new("test").unwrap();
     let env = get_env().open(dir.path()).unwrap();
 
@@ -109,7 +109,7 @@ fn setup_bench_db(num_pairs: u32, num_bytes: usize) -> (TempDir, Environment) {
         let db = env.open_db(None).unwrap();
         let mut txn = env.begin_rw_txn().unwrap();
         for i in 0..num_pairs {
-            txn.put(db, &get_key(i), &get_value(num_bytes), WriteFlags::empty()).unwrap();
+            txn.put(db, &get_key(i), &get_value(size_values), WriteFlags::empty()).unwrap();
         }
         txn.commit().unwrap();
     }
@@ -139,11 +139,11 @@ fn bench_put_seq_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_seq_sync",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
+            let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             let env = get_env().open(dir.path()).unwrap();
             let db = env.open_db(None).unwrap();
-            let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
+            let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
 
             b.iter(|| {
                 let mut txn = env.begin_rw_txn().unwrap();
@@ -161,7 +161,7 @@ fn bench_put_seq_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_seq_async",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
+            let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
             // environment flags to make them async (along with using a writeable
@@ -171,7 +171,7 @@ fn bench_put_seq_async(c: &mut Criterion) {
                 .open(dir.path())
                 .unwrap();
             let db = env.open_db(None).unwrap();
-            let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
+            let pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
 
             b.iter(|| {
                 let mut txn = env.begin_rw_txn().unwrap();
@@ -189,11 +189,11 @@ fn bench_put_rand_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_rand_sync",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
+            let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             let env = get_env().open(dir.path()).unwrap();
             let db = env.open_db(None).unwrap();
-            let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
+            let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| {
@@ -212,7 +212,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_rand_async",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
+            let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
             // environment flags to make them async (along with using a writeable
@@ -222,7 +222,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
                 .open(dir.path())
                 .unwrap();
             let db = env.open_db(None).unwrap();
-            let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, num_bytes)).collect();
+            let mut pairs: Vec<([u8; 4], Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| {
@@ -241,8 +241,8 @@ fn bench_get_seq(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_get_seq",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
-            let (_dir, env) = setup_bench_db(num_pairs, num_bytes);
+            let (num_pairs, size_values) = t;
+            let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
             let keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
 
@@ -262,8 +262,8 @@ fn bench_get_rand(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_get_rand",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
-            let (_dir, env) = setup_bench_db(num_pairs, num_bytes);
+            let (num_pairs, size_values) = t;
+            let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
             let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
             thread_rng().shuffle(&mut keys[..]);
@@ -285,8 +285,8 @@ fn bench_get_seq_iter(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_get_seq_iter",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
-            let (_dir, env) = setup_bench_db(num_pairs, num_bytes);
+            let (num_pairs, size_values) = t;
+            let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
             let txn = env.begin_ro_txn().unwrap();
 
@@ -313,8 +313,8 @@ fn bench_db_size(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_db_size",
         move |b, &&t| {
-            let (num_pairs, num_bytes) = t;
-            let (dir, _env) = setup_bench_db(num_pairs, num_bytes);
+            let (num_pairs, size_values) = t;
+            let (dir, _env) = setup_bench_db(num_pairs, size_values);
             let mut total_size = 0;
 
             for entry in WalkDir::new(dir.path()) {
