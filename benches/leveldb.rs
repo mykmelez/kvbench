@@ -180,7 +180,7 @@ fn bench_put_seq_async(c: &mut Criterion) {
             let db: Database<i32> = Database::open(path, options).unwrap();
             let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
 
-            b.iter(|| leveldb_put(&db, &pairs, true))
+            b.iter(|| leveldb_put(&db, &pairs, false))
         },
         PARAMS.iter(),
     );
@@ -218,7 +218,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
             let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
-            b.iter(|| leveldb_put(&db, &pairs, true))
+            b.iter(|| leveldb_put(&db, &pairs, false))
         },
         PARAMS.iter(),
     );
