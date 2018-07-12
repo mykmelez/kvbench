@@ -65,7 +65,8 @@ lazy_static! {
     // A collection of tuples (num_pairs, size_values) representing every
     // combination of numbers of pairs and sizes of values, which we use
     // to benchmark storage engine performance across various shapes of data.
-    static ref PARAMS: Vec<(u32, usize)> = PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| (m, n))).collect();
+    static ref PARAMS: Vec<(u32, usize)> =
+        PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| (m, n))).collect();
 }
 
 pub fn get_key(n: u32) -> i32 {
