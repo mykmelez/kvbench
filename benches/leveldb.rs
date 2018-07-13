@@ -228,7 +228,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
 fn bench_get_seq(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = setup_bench_db(num_pairs, size_values);
             let path = dir.path();
@@ -252,7 +252,7 @@ fn bench_get_seq(c: &mut Criterion) {
 fn bench_get_rand(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_rand",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = setup_bench_db(num_pairs, size_values);
             let path = dir.path();
@@ -277,7 +277,7 @@ fn bench_get_rand(c: &mut Criterion) {
 fn bench_get_seq_iter(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq_iter",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = setup_bench_db(num_pairs, size_values);
             let path = dir.path();
@@ -307,7 +307,7 @@ fn bench_get_seq_iter(c: &mut Criterion) {
 fn bench_db_size(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_db_size",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = setup_bench_db(num_pairs, size_values);
             let mut total_size = 0;
