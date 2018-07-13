@@ -161,7 +161,7 @@ fn lmdb_put(env: &Environment, db: Database, pairs: &Vec<([u8; 4], Vec<u8>)>) {
 fn bench_put_seq_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_seq_sync",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             let env = get_env().open(dir.path()).unwrap();
@@ -177,7 +177,7 @@ fn bench_put_seq_sync(c: &mut Criterion) {
 fn bench_put_seq_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_seq_async",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
@@ -199,7 +199,7 @@ fn bench_put_seq_async(c: &mut Criterion) {
 fn bench_put_rand_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_rand_sync",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             let env = get_env().open(dir.path()).unwrap();
@@ -216,7 +216,7 @@ fn bench_put_rand_sync(c: &mut Criterion) {
 fn bench_put_rand_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_put_rand_async",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let dir = TempDir::new("test").unwrap();
             // LMDB writes are sync by default.  Set the MAP_ASYNC and WRITE_MAP
@@ -239,7 +239,7 @@ fn bench_put_rand_async(c: &mut Criterion) {
 fn bench_get_seq(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_get_seq",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
@@ -260,7 +260,7 @@ fn bench_get_seq(c: &mut Criterion) {
 fn bench_get_rand(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_get_rand",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
@@ -283,7 +283,7 @@ fn bench_get_rand(c: &mut Criterion) {
 fn bench_get_seq_iter(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_get_seq_iter",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
@@ -311,7 +311,7 @@ fn bench_get_seq_iter(c: &mut Criterion) {
 fn bench_db_size(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "lmdb_db_size",
-        move |b, &&t| {
+        |b, &&t| {
             let (num_pairs, size_values) = t;
             let (dir, _env) = setup_bench_db(num_pairs, size_values);
             let mut total_size = 0;
