@@ -267,8 +267,8 @@ fn bench_get_rand(c: &mut Criterion) {
             let mut keys: Vec<[u8; 4]> = (0..num_pairs).map(|n| get_key(n)).collect();
             thread_rng().shuffle(&mut keys[..]);
 
-            let txn = env.begin_ro_txn().unwrap();
             b.iter(|| {
+                let txn = env.begin_ro_txn().unwrap();
                 let mut i = 0usize;
                 for key in &keys {
                     i = i + txn.get(db, key).unwrap().len();
@@ -287,9 +287,9 @@ fn bench_get_seq_iter(c: &mut Criterion) {
             let (num_pairs, size_values) = t;
             let (_dir, env) = setup_bench_db(num_pairs, size_values);
             let db = env.open_db(None).unwrap();
-            let txn = env.begin_ro_txn().unwrap();
 
             b.iter(|| {
+                let txn = env.begin_ro_txn().unwrap();
                 let mut cursor = txn.open_ro_cursor(db).unwrap();
                 let mut i = 0;
                 let mut count = 0u32;
