@@ -49,6 +49,7 @@ use rand::{
 };
 
 use std::{
+    mem,
     thread,
     time,
 };
@@ -249,8 +250,9 @@ fn bench_get_seq(c: &mut Criterion) {
                 let txn = env.begin_ro_txn().unwrap();
                 let mut i = 0usize;
                 for key in &keys {
-                    i = i + txn.get(db, key).unwrap().len();
+                    i += txn.get(db, key).unwrap().len();
                 }
+                i
             })
         },
         PARAMS.iter(),
@@ -271,8 +273,9 @@ fn bench_get_rand(c: &mut Criterion) {
                 let txn = env.begin_ro_txn().unwrap();
                 let mut i = 0usize;
                 for key in &keys {
-                    i = i + txn.get(db, key).unwrap().len();
+                    i += txn.get(db, key).unwrap().len();
                 }
+                i
             })
         },
         PARAMS.iter(),
@@ -291,13 +294,14 @@ fn bench_get_seq_iter(c: &mut Criterion) {
             b.iter(|| {
                 let txn = env.begin_ro_txn().unwrap();
                 let mut cursor = txn.open_ro_cursor(db).unwrap();
-                let mut i = 0;
+                let mut i = 0usize;
                 let mut count = 0u32;
                 for (key, data) in cursor.iter() {
-                    i = i + key.len() + data.len();
-                    count = count + 1;
+                    i += mem::size_of_val(&key) + data.len();
+                    count += 1;
                 }
                 assert_eq!(count, num_pairs);
+                i
             })
         },
         PARAMS.iter(),

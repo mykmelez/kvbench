@@ -52,6 +52,7 @@ use leveldb::options::{
 };
 
 use std::{
+    mem,
     thread,
     time,
 };
@@ -82,7 +83,7 @@ lazy_static! {
         PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| (m, n))).collect();
 }
 
-pub fn get_key(n: u32) -> i32 {
+fn get_key(n: u32) -> i32 {
     n as i32
 }
 
@@ -90,11 +91,11 @@ fn get_value(size_values: usize) -> Vec<u8> {
     (0..size_values).map(|_| random()).collect()
 }
 
-pub fn get_pair(num_pairs: u32, size_values: usize) -> (i32, Vec<u8>) {
+fn get_pair(num_pairs: u32, size_values: usize) -> (i32, Vec<u8>) {
     (get_key(num_pairs), get_value(size_values))
 }
 
-pub fn setup_bench_db(num_pairs: u32, size_values: usize) -> TempDir {
+fn setup_bench_db(num_pairs: u32, size_values: usize) -> TempDir {
     let dir = TempDir::new("demo").unwrap();
 
     let mut options = Options::new();
@@ -239,8 +240,9 @@ fn bench_get_seq(c: &mut Criterion) {
                 let mut i = 0usize;
                 for key in &keys {
                     let read_opts = ReadOptions::new();
-                    i = i + database.get(read_opts, key).unwrap().unwrap().len();
+                    i += database.get(read_opts, key).unwrap().unwrap().len();
                 }
+                i
             })
         },
         PARAMS.iter(),
@@ -263,8 +265,9 @@ fn bench_get_rand(c: &mut Criterion) {
                 let mut i = 0usize;
                 for key in &keys {
                     let read_opts = ReadOptions::new();
-                    i = i + database.get(read_opts, key).unwrap().unwrap().len();
+                    i += database.get(read_opts, key).unwrap().unwrap().len();
                 }
+                i
             })
         },
         PARAMS.iter(),
@@ -284,14 +287,15 @@ fn bench_get_seq_iter(c: &mut Criterion) {
             thread_rng().shuffle(&mut keys[..]);
 
             b.iter(|| {
-                let mut i = 0;
+                let mut i = 0usize;
                 let mut count = 0u32;
                 let read_opts = ReadOptions::new();
                 for (key, data) in database.iter(read_opts) {
-                    i = i + key as usize + data.len();
-                    count = count + 1;
+                    i += mem::size_of_val(&key) + data.len();
+                    count += 1;
                 }
                 assert_eq!(count, num_pairs);
+                i
             })
         },
         PARAMS.iter(),
