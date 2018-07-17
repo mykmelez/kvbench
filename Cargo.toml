@@ -1,5 +1,5 @@
 [package]
-name = "kv-bench"
+name = "kvbench"
 version = "0.1.0"
 authors = ["Myk Melez <myk@mykzilla.org>"]
 
