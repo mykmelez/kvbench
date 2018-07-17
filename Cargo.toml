@@ -26,5 +26,5 @@ name = "leveldb"
 harness = false
 
 [[bench]]
-name = "bench"
+name = "compare"
 harness = false
