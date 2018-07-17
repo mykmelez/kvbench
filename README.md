@@ -4,7 +4,7 @@
 
 This repo contains a set of benchmarks for the LMDB and LevelDB key-value storage engines.  Its purpose is to provide useful metrics on the relative performance of the two engines.  It may also prove useful for comparing disk footprint (of both the engines themselves and their storage files), memory footprint, reliability, and developer ergonomics.
 
-The benchmarks are written using the [criterion](https://docs.rs/criterion) Rust benchmarking crate.
+The benchmarks are written using [Criterion.rs](https://japaric.github.io/criterion.rs/book/), a "statistics-driven micro-benchmarking tool."
 
 # Use
 
@@ -101,6 +101,8 @@ Here's an example of the relative disk footprint (in kilobytes) of the benchmark
  864 target/release/leveldb
  684 target/release/lmdb
 ```
+
+Also see this [example Criterion.rs report](https://mykmelez.github.io/kvbench/criterion/report/).
 
 # Caveats
 
