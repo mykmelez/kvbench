@@ -27,15 +27,8 @@ use criterion::{
 };
 
 use leveldb::database::Database as LeveldbDatabase;
-
-use leveldb::options::{
-    Options,
-};
-
-use lmdb::{
-    Environment,
-};
-
+use leveldb::options::Options;
+use lmdb::Environment;
 use tempdir::TempDir;
 
 fn cmp_open_db(c: &mut Criterion) {
@@ -73,13 +66,9 @@ fn cmp_open_db(c: &mut Criterion) {
         })
     });
 
-    let functions = vec!(leveldb_fun, lmdb_fun);
-    c.bench_functions("cmp_open_db", functions, ());
+    let bench_functions = vec![leveldb_fun, lmdb_fun];
+    c.bench_functions("cmp_open_db", bench_functions, ());
 }
 
-
-criterion_group!(
-    benches,
-    cmp_open_db,
-);
+criterion_group!(benches, cmp_open_db);
 criterion_main!(benches);
