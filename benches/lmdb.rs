@@ -29,7 +29,6 @@ extern crate tempdir;
 extern crate walkdir;
 
 use criterion::Criterion;
-
 use libc::size_t;
 
 use lmdb::{

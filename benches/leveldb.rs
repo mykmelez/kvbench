@@ -17,7 +17,6 @@
 
 #[macro_use]
 extern crate criterion;
-use criterion::Criterion;
 
 #[macro_use]
 extern crate lazy_static;
@@ -27,6 +26,8 @@ extern crate leveldb;
 extern crate rand;
 extern crate tempdir;
 extern crate walkdir;
+
+use criterion::Criterion;
 
 use self::rand::{
     random,
@@ -126,7 +127,8 @@ fn bench_open_db(c: &mut Criterion) {
 
     c.bench_function("leveldb_open_db", move |b| {
         b.iter(|| {
-            let _db: Database<i32> = Database::open(dir.path(), Options::new()).unwrap();
+            let db: Database<i32> = Database::open(dir.path(), Options::new()).unwrap();
+            db
         })
     });
 }

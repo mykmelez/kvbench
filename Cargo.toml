@@ -24,3 +24,7 @@ harness = false
 [[bench]]
 name = "leveldb"
 harness = false
+
+[[bench]]
+name = "bench"
+harness = false
