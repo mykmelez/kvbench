@@ -19,76 +19,33 @@ Here's part of the output of an example benchmark run (edited for brevity):
 ```
 > cargo bench
 …
-     Running target/release/deps/leveldb-1abc2c24f9c191cf
-leveldb_open_db         time:   [1.3582 ms 1.3711 ms 1.3865 ms]
-                        change: [-10.744% -8.2753% -5.8404%] (p = 0.00 < 0.05)
-                        Performance has improved.
-Found 10 outliers among 100 measurements (10.00%)
-  2 (2.00%) low mild
-  5 (5.00%) high mild
-  3 (3.00%) high severe
-
-leveldb_put_seq_sync/1  time:   [55.192 us 56.010 us 57.236 us]
-                        change: [+0.1947% +2.6007% +5.3932%] (p = 0.04 < 0.05)
-                        Change within noise threshold.
-Found 10 outliers among 100 measurements (10.00%)
-  1 (1.00%) low mild
-  3 (3.00%) high mild
-  6 (6.00%) high severe
-leveldb_put_seq_sync/128
-                        time:   [377.23 us 397.50 us 421.24 us]
-                        change: [-22.371% -16.567% -10.286%] (p = 0.00 < 0.05)
-                        Performance has improved.
-Found 16 outliers among 100 measurements (16.00%)
-  2 (2.00%) low mild
-  2 (2.00%) high mild
-  12 (12.00%) high severe
-leveldb_put_seq_sync/1024
-                        time:   [1.2903 ms 1.2990 ms 1.3088 ms]
-                        change: [-45.079% -42.306% -39.356%] (p = 0.00 < 0.05)
-                        Performance has improved.
-Found 4 outliers among 100 measurements (4.00%)
-  2 (2.00%) low mild
-  2 (2.00%) high mild
-
+     Running target/release/deps/compare-53608677cd816849
+cmp_open_db/leveldb     time:   [1.3044 ms 1.3136 ms 1.3251 ms]
 …
-
-leveldb_get_seq/1       time:   [1.0293 us 1.0366 us 1.0451 us]
-                        change: [-1.7149% -0.1274% +1.5447%] (p = 0.88 > 0.05)
-                        No change in performance detected.
-Found 8 outliers among 100 measurements (8.00%)
-  5 (5.00%) high mild
-  3 (3.00%) high severe
-leveldb_get_seq/128     time:   [158.59 us 159.77 us 160.96 us]
-                        change: [-1.6600% +0.2003% +1.9977%] (p = 0.84 > 0.05)
-                        No change in performance detected.
-Found 6 outliers among 100 measurements (6.00%)
-  1 (1.00%) high mild
-  5 (5.00%) high severe
-leveldb_get_seq/1024    time:   [1.3232 ms 1.3337 ms 1.3457 ms]
-                        change: [-0.0770% +1.5917% +3.5941%] (p = 0.08 > 0.05)
-                        No change in performance detected.
-Found 5 outliers among 100 measurements (5.00%)
-  3 (3.00%) high mild
-  2 (2.00%) high severe
-
+cmp_open_db/lmdb        time:   [165.57 us 166.70 us 167.94 us]
 …
-
-leveldb_db_size/1       time:   [8.0406 us 8.2096 us 8.3724 us]
-                        change: [-0.9352% +1.7033% +4.4698%] (p = 0.22 > 0.05)
-                        No change in performance detected.
-Found 1 outliers among 100 measurements (1.00%)
-  1 (1.00%) high mild
-leveldb_db_size/128     time:   [7.8870 us 8.0797 us 8.2627 us]
-                        change: [+3.7505% +6.8143% +9.9680%] (p = 0.00 < 0.05)
-                        Performance has regressed.
-Found 1 outliers among 100 measurements (1.00%)
-  1 (1.00%) high mild
-leveldb_db_size/1024    time:   [24.231 us 24.426 us 24.616 us]
-                        change: [+0.4283% +1.5960% +2.7463%] (p = 0.01 < 0.05)
-                        Change within noise threshold.
-
+leveldb_put_seq_sync/(1, 1)
+                        time:   [56.046 us 56.619 us 57.429 us]
+…
+leveldb_put_seq_sync/(1, 100)
+                        time:   [57.474 us 58.370 us 59.578 us]
+…
+leveldb_db_size/(1000, 1000)
+                        time:   [1.6267 ms 1.6330 ms 1.6386 ms]
+…
+     Running target/release/deps/lmdb-93c20684e4f1f806
+lmdb_open_db            time:   [162.39 us 163.03 us 163.75 us]
+…
+lmdb_put_seq_sync/(1, 1)
+                        time:   [106.53 us 107.16 us 107.91 us]
+…
+lmdb_put_seq_sync/(1, 100)
+                        time:   [106.70 us 107.21 us 107.72 us]
+…
+lmdb_db_size/(1000, 1000)
 ```
+
+The tuples in test names are combinations of the number of pairs of keys/values and the sizes of the values. For example, the test named "lmdb_put_seq_sync/(1, 100)" writes a single key/value pair to the datastore, and the value size is 100 bytes.
 
 Note that the "db_size" benches are a measure of space, not time.  They reflect the size of storage files into elapsed time via a hack (sleeping for the file size in bytes's number of nanoseconds).  This may or may not be a reasonable way to measure the disk footprint of storage files.
 
