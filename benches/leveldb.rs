@@ -76,12 +76,18 @@ use tempdir::TempDir;
 const PAIR_COUNTS: [u32; 3] = [1, 100, 1000];
 const VALUE_SIZES: [usize; 3] = [1, 100, 1000];
 
+#[derive(Debug)]
+struct Param {
+    num_pairs: u32,
+    size_values: usize,
+}
+
 lazy_static! {
     // A collection of tuples (num_pairs, size_values) representing every
     // combination of numbers of pairs and sizes of values, which we use
     // to benchmark storage engine performance across various shapes of data.
-    static ref PARAMS: Vec<(u32, usize)> =
-        PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| (m, n))).collect();
+    static ref PARAMS: Vec<Param> =
+        PAIR_COUNTS.iter().flat_map(|&m| VALUE_SIZES.iter().map(move |&n| Param { num_pairs: m, size_values: n })).collect();
 }
 
 fn get_key(n: u32) -> i32 {
@@ -156,14 +162,14 @@ fn leveldb_put(db: &Database<i32>, pairs: &Vec<(i32, Vec<u8>)>, sync: bool) {
 fn bench_put_seq_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_seq_sync",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
             let dir = TempDir::new("bench_put_seq").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
+            let pairs: Vec<(i32, Vec<u8>)> = (0..*num_pairs).map(|n| get_pair(n, *size_values)).collect();
 
             b.iter(|| leveldb_put(&db, &pairs, true))
         },
@@ -174,14 +180,14 @@ fn bench_put_seq_sync(c: &mut Criterion) {
 fn bench_put_seq_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_seq_async",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
             let dir = TempDir::new("bench_put_seq").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
+            let pairs: Vec<(i32, Vec<u8>)> = (0..*num_pairs).map(|n| get_pair(n, *size_values)).collect();
 
             b.iter(|| leveldb_put(&db, &pairs, false))
         },
@@ -192,14 +198,14 @@ fn bench_put_seq_async(c: &mut Criterion) {
 fn bench_put_rand_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_rand_sync",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
             let dir = TempDir::new("bench_put_rand_sync").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
+            let mut pairs: Vec<(i32, Vec<u8>)> = (0..*num_pairs).map(|n| get_pair(n, *size_values)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| leveldb_put(&db, &pairs, true))
@@ -211,14 +217,14 @@ fn bench_put_rand_sync(c: &mut Criterion) {
 fn bench_put_rand_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_rand_async",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
             let dir = TempDir::new("bench_put_rand_async").unwrap();
             let path = dir.path();
             let mut options = Options::new();
             options.create_if_missing = true;
             let db: Database<i32> = Database::open(path, options).unwrap();
-            let mut pairs: Vec<(i32, Vec<u8>)> = (0..num_pairs).map(|n| get_pair(n, size_values)).collect();
+            let mut pairs: Vec<(i32, Vec<u8>)> = (0..*num_pairs).map(|n| get_pair(n, *size_values)).collect();
             thread_rng().shuffle(&mut pairs[..]);
 
             b.iter(|| leveldb_put(&db, &pairs, false))
@@ -230,13 +236,13 @@ fn bench_put_rand_async(c: &mut Criterion) {
 fn bench_get_seq(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
-            let dir = setup_bench_db(num_pairs, size_values);
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
+            let dir = setup_bench_db(*num_pairs, *size_values);
             let path = dir.path();
             let options = Options::new();
             let database: Database<i32> = Database::open(path, options).unwrap();
-            let keys: Vec<i32> = (0..num_pairs as i32).collect();
+            let keys: Vec<i32> = (0..*num_pairs as i32).collect();
 
             b.iter(|| {
                 let mut i = 0usize;
@@ -254,13 +260,13 @@ fn bench_get_seq(c: &mut Criterion) {
 fn bench_get_rand(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_rand",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
-            let dir = setup_bench_db(num_pairs, size_values);
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
+            let dir = setup_bench_db(*num_pairs, *size_values);
             let path = dir.path();
             let options = Options::new();
             let database: Database<i32> = Database::open(path, options).unwrap();
-            let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
+            let mut keys: Vec<i32> = (0..*num_pairs as i32).collect();
             thread_rng().shuffle(&mut keys[..]);
 
             b.iter(|| {
@@ -279,13 +285,13 @@ fn bench_get_rand(c: &mut Criterion) {
 fn bench_get_seq_iter(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq_iter",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
-            let dir = setup_bench_db(num_pairs, size_values);
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
+            let dir = setup_bench_db(*num_pairs, *size_values);
             let path = dir.path();
             let options = Options::new();
             let database: Database<i32> = Database::open(path, options).unwrap();
-            let mut keys: Vec<i32> = (0..num_pairs as i32).collect();
+            let mut keys: Vec<i32> = (0..*num_pairs as i32).collect();
             thread_rng().shuffle(&mut keys[..]);
 
             b.iter(|| {
@@ -296,7 +302,7 @@ fn bench_get_seq_iter(c: &mut Criterion) {
                     i += mem::size_of_val(&key) + data.len();
                     count += 1;
                 }
-                assert_eq!(count, num_pairs);
+                assert_eq!(count, *num_pairs);
                 i
             })
         },
@@ -309,9 +315,9 @@ fn bench_get_seq_iter(c: &mut Criterion) {
 fn bench_db_size(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_db_size",
-        |b, &&t| {
-            let (num_pairs, size_values) = t;
-            let dir = setup_bench_db(num_pairs, size_values);
+        |b, ref t| {
+            let Param { num_pairs, size_values } = t;
+            let dir = setup_bench_db(*num_pairs, *size_values);
             let mut total_size = 0;
 
             for entry in WalkDir::new(dir.path()) {
