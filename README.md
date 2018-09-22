@@ -46,7 +46,7 @@ lmdb_db_size/Param { num_pairs: 1000, size_values: 1000 }
                         time:   [1.8733 ms 1.8784 ms 1.8826 ms]
 ```
 
-The tuples in test names are combinations of the number of pairs of keys/values and the sizes of the values. For example, the test named "lmdb_put_seq_sync/Param { num_pairs: 1, size_values: 100 }" writes a single key/value pair to the datastore, and the size of the value is 100 bytes.
+The parameters in test names are combinations of the number of pairs of keys/values and the sizes of the values. For example, the test named "lmdb_put_seq_sync/Param { num_pairs: 1, size_values: 100 }" writes a single key/value pair to the datastore, and the size of the value is 100 bytes.
 
 Note that the "db_size" benches are a measure of space, not time.  They reflect the size of storage files into elapsed time via a hack (sleeping for the file size in bytes's number of nanoseconds).  This may or may not be a reasonable way to measure the disk footprint of storage files.
 
