@@ -163,7 +163,10 @@ fn bench_put_seq_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_seq_sync",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = TempDir::new("bench_put_seq").unwrap();
             let path = dir.path();
             let mut options = Options::new();
@@ -181,7 +184,10 @@ fn bench_put_seq_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_seq_async",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = TempDir::new("bench_put_seq").unwrap();
             let path = dir.path();
             let mut options = Options::new();
@@ -199,7 +205,10 @@ fn bench_put_rand_sync(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_rand_sync",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = TempDir::new("bench_put_rand_sync").unwrap();
             let path = dir.path();
             let mut options = Options::new();
@@ -218,7 +227,10 @@ fn bench_put_rand_async(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_put_rand_async",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = TempDir::new("bench_put_rand_async").unwrap();
             let path = dir.path();
             let mut options = Options::new();
@@ -237,7 +249,10 @@ fn bench_get_seq(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = setup_bench_db(*num_pairs, *size_values);
             let path = dir.path();
             let options = Options::new();
@@ -261,7 +276,10 @@ fn bench_get_rand(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_rand",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = setup_bench_db(*num_pairs, *size_values);
             let path = dir.path();
             let options = Options::new();
@@ -286,7 +304,10 @@ fn bench_get_seq_iter(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_get_seq_iter",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = setup_bench_db(*num_pairs, *size_values);
             let path = dir.path();
             let options = Options::new();
@@ -316,7 +337,10 @@ fn bench_db_size(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "leveldb_db_size",
         |b, ref t| {
-            let Param { num_pairs, size_values } = t;
+            let Param {
+                num_pairs,
+                size_values,
+            } = t;
             let dir = setup_bench_db(*num_pairs, *size_values);
             let mut total_size = 0;
 
